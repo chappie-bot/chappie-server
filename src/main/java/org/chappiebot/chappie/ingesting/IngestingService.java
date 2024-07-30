@@ -181,11 +181,19 @@ public class IngestingService {
                 this.summaryArray.add(summary);
                 documentsQueue.poll(); // Remove that document that has now been process
             }catch(IngestingException | SummaryException ie){
-                // Something went wrong. Move it to the back of the queue
-                ie.printStackTrace();
-                Log.warnf("Problem ingesting product [%s] version [%s] document [%s], moving it to the error queue to retry later", key.product, key.version, this.currentDocumentLocation.name());
-                DocumentLocation b = documentsQueue.poll();
-                errorQueue.add(b);
+                if (ie.getCause() != null && ie.getCause().getMessage().contains("insufficient_quota")) {
+                    // Stop processing the queue as hitting the limits or no $$$ available
+                    productQueue.clear();
+                    documentsQueue.clear();
+                    errorQueue.clear();
+                    Log.warn("Stopping queue processing as insufficient_quota error was returned from the AI service");
+                } else {
+                    // Something went wrong. Move it to the back of the queue
+                    ie.printStackTrace();
+                    Log.warnf("Problem ingesting product [%s] version [%s] document [%s], moving it to the error queue to retry later", key.product, key.version, this.currentDocumentLocation.name());
+                    DocumentLocation b = documentsQueue.poll();
+                    errorQueue.add(b);
+                }
             }
             if(documentsQueue.isEmpty()){
                 // All document for a certain product/version has been processed
