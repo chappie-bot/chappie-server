@@ -15,6 +15,8 @@
         <quarkus.platform.version>3.13.2</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
+        
+        <langchain4j.version>0.17.0</langchain4j.version>
     </properties>
 
     <dependencyManagement>
@@ -41,13 +43,8 @@
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.langchain4j</groupId>
-            <artifactId>quarkus-langchain4j-openai</artifactId>
-            <version>0.17.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.langchain4j</groupId>
-            <artifactId>quarkus-langchain4j-ollama</artifactId>
-            <version>0.17.0</version>
+            <artifactId>quarkus-langchain4j-core</artifactId>
+            <version>${langchain4j.version}</version>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -131,5 +128,39 @@
                 <quarkus.native.enabled>true</quarkus.native.enabled>
             </properties>
         </profile>
+        <profile>
+            <id>ollama</id>
+            <activation>
+                <property>
+                    <name>quarkus.profile</name>
+                    <value>ollama</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>io.quarkiverse.langchain4j</groupId>
+                    <artifactId>quarkus-langchain4j-ollama</artifactId>
+                    <version>${langchain4j.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        
+        <profile>
+            <id>openai</id>
+            <activation>
+                <property>
+                    <name>quarkus.profile</name>
+                    <value>openai</value>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>io.quarkiverse.langchain4j</groupId>
+                    <artifactId>quarkus-langchain4j-openai</artifactId>
+                    <version>${langchain4j.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        
     </profiles>
 </project>
