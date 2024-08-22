@@ -39,7 +39,7 @@
         <dependency>
             <groupId>io.quarkiverse.json-rpc</groupId>
             <artifactId>quarkus-json-rpc</artifactId>
-            <version>999-SNAPSHOT</version>
+            <version>0.0.5</version>
         </dependency>
         <dependency>
             <groupId>io.quarkiverse.langchain4j</groupId>
