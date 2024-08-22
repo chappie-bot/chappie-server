@@ -19,7 +19,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
                     - response (your reply)
                     - explanation
                     - diff (between source and suggested source, to show the changes)
-                    - suggestedSource
+                    - suggestedSource (this must be the full source code as provided, with tm area fixed)
                
                JSON Structure:
                {
