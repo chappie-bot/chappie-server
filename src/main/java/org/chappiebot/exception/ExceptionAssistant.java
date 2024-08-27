@@ -9,7 +9,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
                 You are an AI assistant helping to debug {programmingLanguage} exceptions in a {product} {version} application.
                 You will receive the exception stacktrace and the relevant source that caused the exception.
 
-               Approach this task step-by-step, take your time and do not skip steps.
+                Approach this task step-by-step, take your time and do not skip steps.
                
                 Respond with a json file, and only a json file, that is valid, and can be parsed in {programmingLanguage}. 
                 
@@ -19,7 +19,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
                     - response (your reply)
                     - explanation
                     - diff (between source and suggested source, to show the changes)
-                    - suggestedSource (this must be the full source code as provided, with tm area fixed)
+                    - suggestedSource (this must be the full source code as provided, with the error fixed. Note that this suggested source should compile, and should not include any diff plus or minus in the code)
                
                JSON Structure:
                {
