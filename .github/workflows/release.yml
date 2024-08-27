@@ -17,23 +17,16 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '17'
-    
+        server-id: central
+        server-username: ${{ secrets.CENTRAL_USERNAME }}
+        server-password: ${{ secrets.CENTRAL_PASSWORD }}
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+        
     - name: Update version in pom.xml
       run: |
         RELEASE_VERSION=$(echo ${{ github.event.release.tag_name }} | sed 's/^v//')
         mvn versions:set -DnewVersion=${RELEASE_VERSION} -DgenerateBackupPoms=false
 
-    - name: Build with Maven
-      run: mvn clean install -Dquarkus.profile=chappie -Dnative -DskipTests
-    
-    - name: Log in to Quay.io
-      run: echo "${{ secrets.QUAY_PASSWORD }}" | docker login quay.io -u "${{ secrets.QUAY_USERNAME }}" --password-stdin
-    
-    - name: Build Docker image
-      run: docker build -f src/main/docker/Dockerfile.native-micro -t chappie/chappie-server:${{ github.event.release.tag_name }} .
-
-    - name: Tag Docker image
-      run: docker tag chappie/chappie-server:${{ github.event.release.tag_name }} quay.io/chappie/chappie-server:${{ github.event.release.tag_name }}
-    
-    - name: Push Docker image to Quay.io
-      run: docker push quay.io/chappie/chappie-server:${{ github.event.release.tag_name }}
+    - name: Build and publish to Maven Central
+      run: mvn clean deploy -P release -Dquarkus.profile=chappie -DskipTests -Dgpg.skip=false

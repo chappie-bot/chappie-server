@@ -181,10 +181,15 @@
             <id>release</id>
             <activation>
                 <property>
-                    <name>performRelease</name>
+                    <name>release</name>
                     <value>true</value>
                 </property>
             </activation>
+            <properties>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.keyname>7AD9253986F8E6E9</gpg.keyname>
+                <gpg.passphrase>${gpg.passphrase}</gpg.passphrase>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
