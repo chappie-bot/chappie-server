@@ -20,6 +20,6 @@ jobs:
         distribution: 'temurin'
         cache: maven
     - name: Build with Maven
-      run: mvn -B package
+      run: mvn -B package -Dquarkus.profile=chappie
     - name: Build with Maven (Native)
-      run: mvn -B install -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip -Dquarkus.profile=test
+      run: mvn -B install -Dnative -Dquarkus.native.container-build -Dnative.surefire.skip -Dquarkus.profile=test,chappie
