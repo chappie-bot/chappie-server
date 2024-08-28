@@ -33,7 +33,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 public interface ExceptionAssistant {
     
     @UserMessage("""
-                I have the following java exception:
+                I have the following {programmingLanguage} exception:
                 ```
                 {stacktrace}
                 ```
@@ -46,7 +46,7 @@ public interface ExceptionAssistant {
     public SuggestedFix suggestFix(String programmingLanguage, String product, String version, String stacktrace, String source);
     
     @UserMessage("""
-                I have the following java exception:
+                I have the following {programmingLanguage} exception:
                 ```
                 {stacktrace}
                 ```
