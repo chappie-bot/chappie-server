@@ -1,5 +1,6 @@
-package org.chappiebot.test;
+package org.chappiebot.javadoc;
 
+import org.chappiebot.test.*;
 import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
 import jakarta.inject.Inject;
 
@@ -10,9 +11,9 @@ import jakarta.inject.Inject;
 @JsonRPCApi("testing")
 public class TestEndpoint {
     
-    @Inject TestAssistant testAssistant;
+    @Inject JavaDocAssistant testAssistant;
 
-    public SuggestedTest suggesttest(String programmingLanguage, 
+    public SourceWithJavaDoc suggesttest(String programmingLanguage, 
                                     String product, 
                                     String version,
                                     String extraContext,
