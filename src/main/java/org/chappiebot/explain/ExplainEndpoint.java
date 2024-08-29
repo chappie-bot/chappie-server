@@ -1,23 +1,22 @@
-package org.chappiebot.test;
+package org.chappiebot.explain;
 
 import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
 import jakarta.inject.Inject;
-import java.util.List;
 /**
- * The JsonRPC Endpoint for test creation
+ * The JsonRPC Endpoint for explanation
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("testing")
-public class TestEndpoint {
+@JsonRPCApi("explanation")
+public class ExplainEndpoint {
     
-    @Inject TestAssistant testAssistant;
+    @Inject ExplainAssistant explainAssistant;
 
-    public SuggestedTest suggesttest(String programmingLanguage, 
+    public String explain(String programmingLanguage, 
                                     String product, 
                                     String version,
                                     String extraContext,
                                     String source) {
         
-        return testAssistant.suggestTest(programmingLanguage, product, version, extraContext, source);
+        return explainAssistant.explain(programmingLanguage, product, version, extraContext, source);
     }
 }
