@@ -41,17 +41,23 @@ public interface ExceptionAssistant {
                 ```
                 {source}
                 ```
+                
+                {extraContext}
+                 
                 Please help me fix it.
             """)
-    public SuggestedFix suggestFix(String programmingLanguage, String product, String version, String stacktrace, String source);
+    public SuggestedFix suggestFix(String programmingLanguage, String product, String version, String extraContext, String stacktrace, String source);
     
     @UserMessage("""
                 I have the following {programmingLanguage} exception:
                 ```
                 {stacktrace}
                 ```
+                
+                {extraContext}
+                 
                 Please help me fix it.
             """)
-    public SuggestedFix suggestFix(String programmingLanguage, String product, String version, String stacktrace);
+    public SuggestedFix suggestFix(String programmingLanguage, String product, String version, String extraContext, String stacktrace);
     
 }

@@ -14,9 +14,10 @@ public class ExceptionEndpoint {
     public SuggestedFix suggestfix(String programmingLanguage, 
                                     String product, 
                                     String version,
+                                    String extraContext,
                                     String stacktrace,
                                     String source) {
         
-        return exceptionAssistant.suggestFix(programmingLanguage, product, version, stacktrace, source);
+        return exceptionAssistant.suggestFix(programmingLanguage, product, version, extraContext, stacktrace, source);
     }
 }
