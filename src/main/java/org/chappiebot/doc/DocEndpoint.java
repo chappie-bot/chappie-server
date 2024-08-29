@@ -1,24 +1,24 @@
-package org.chappiebot.javadoc;
+package org.chappiebot.doc;
 
-import org.chappiebot.test.*;
 import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
 import jakarta.inject.Inject;
 
 /**
- * The JsonRPC Endpoint for test creation
+ * The JsonRPC Endpoint for doc creation
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("testing")
-public class TestEndpoint {
+@JsonRPCApi("doc")
+public class DocEndpoint {
     
-    @Inject JavaDocAssistant testAssistant;
+    @Inject DocAssistant docAssistant;
 
-    public SourceWithJavaDoc suggesttest(String programmingLanguage, 
+    public String addDoc(String programmingLanguage, 
                                     String product, 
                                     String version,
                                     String extraContext,
+                                    String doc,
                                     String source) {
         
-        return testAssistant.suggestTest(programmingLanguage, product, version, extraContext, source);
+        return docAssistant.addDoc(programmingLanguage, product, version, extraContext, doc, source);
     }
 }

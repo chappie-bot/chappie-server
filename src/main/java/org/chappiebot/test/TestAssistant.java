@@ -7,8 +7,7 @@ import io.quarkiverse.langchain4j.RegisterAiService;
 @RegisterAiService
 @SystemMessage("""
                 You are an AI assistant helping to create Unit tests in {programmingLanguage} code from a {product} {version} application.
-                You will receive the code that needs a test. 
-                Please use that as input when considering the response.
+                You will receive the code that needs a test. Please use that as input when considering the response.
 
                 Approach this task step-by-step, take your time and do not skip steps.
                
