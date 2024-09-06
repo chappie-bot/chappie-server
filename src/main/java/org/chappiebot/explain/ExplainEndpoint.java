@@ -1,5 +1,6 @@
 package org.chappiebot.explain;
 
+import dev.langchain4j.service.V;
 import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
 import jakarta.inject.Inject;
 /**
@@ -11,11 +12,11 @@ public class ExplainEndpoint {
     
     @Inject ExplainAssistant explainAssistant;
 
-    public String explain(String programmingLanguage, 
-                                    String product, 
-                                    String version,
-                                    String extraContext,
-                                    String source) {
+    public String explain(@V("programmingLanguage")String programmingLanguage, 
+                            @V("product")String product, 
+                            @V("version")String version,
+                            @V("extraContext")String extraContext,
+                            @V("source")String source) {
         
         return explainAssistant.explain(programmingLanguage, product, version, extraContext, source);
     }

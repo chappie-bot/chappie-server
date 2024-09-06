@@ -50,11 +50,12 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.14.1</quarkus.platform.version>
+        <quarkus.platform.version>3.14.2</quarkus.platform.version>
         <skipITs>true</skipITs>
         <surefire-plugin.version>3.2.5</surefire-plugin.version>
         
-        <langchain4j.version>0.17.0</langchain4j.version>
+        <langchain4j.version>0.34.0</langchain4j.version>
+        <json-rpc.version>0.0.5</json-rpc.version>
     </properties>
 
     <dependencyManagement>
@@ -77,13 +78,25 @@
         <dependency>
             <groupId>io.quarkiverse.json-rpc</groupId>
             <artifactId>quarkus-json-rpc</artifactId>
-            <version>0.0.5</version>
+            <version>${json-rpc.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.quarkiverse.langchain4j</groupId>
-            <artifactId>quarkus-langchain4j-openai</artifactId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-ollama</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        
+        
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5</artifactId>
@@ -189,7 +202,6 @@
             <properties>
                 <gpg.executable>gpg</gpg.executable>
                 <gpg.keyname>7AD9253986F8E6E9</gpg.keyname>
-                <!--<gpg.passphrase>${gpg.passphrase}</gpg.passphrase>-->
             </properties>
             <build>
                 <plugins>
