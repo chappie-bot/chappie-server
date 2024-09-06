@@ -10,8 +10,9 @@ import jakarta.inject.Inject;
 @JsonRPCApi("doc")
 public class DocEndpoint {
     
-    @Inject DocAssistant docAssistant;
-
+    @Inject
+    DocAssistant docAssistant;
+    
     public String addDoc(String programmingLanguage, 
                                     String product, 
                                     String version,
