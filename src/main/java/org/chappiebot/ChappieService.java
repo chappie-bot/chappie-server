@@ -33,10 +33,16 @@ public class ChappieService {
     @ConfigProperty(name = "chappie.log.response", defaultValue = "false")
     boolean logResponse;
     
+    @ConfigProperty(name = "chappie.timeout")
+    Optional<Duration> timeout;
+    
     // OpenAI
     
     @ConfigProperty(name = "chappie.openai.api-key") 
     Optional<String> openaiKey;
+    
+    @ConfigProperty(name = "chappie.openai.base-url") 
+    Optional<String> openaiBaseUrl;
     
     @ConfigProperty(name = "chappie.openai.model-name", defaultValue = "gpt-4o-mini") 
     String openAiModelName;
@@ -44,17 +50,14 @@ public class ChappieService {
     // Ollama
     
     @ConfigProperty(name = "chappie.ollama.base-url", defaultValue = "http://localhost:11434") 
-    String baseUrl;
+    String ollamaBaseUrl;
     
     @ConfigProperty(name = "chappie.ollama.model-name", defaultValue = "codellama")
     String ollamaModelName;
     
-    @ConfigProperty(name = "chappie.ollama.timeout", defaultValue = "PT60S")
-    String timeout;
-    
     @PostConstruct
     public void init(){
-        if(openaiKey.isPresent()){
+        if(openaiKey.isPresent() || openaiBaseUrl.isPresent()){
             loadOpenAiModel();
         }else{
             loadOllamaModel();
@@ -62,24 +65,43 @@ public class ChappieService {
     }
     
     private void loadOpenAiModel(){
-        Log.info("Using OpenAI " + openAiModelName);
+        
+        openaiBaseUrl.ifPresentOrElse(
+            burl -> Log.info("Using OpenAI (" + burl + ") "),
+            () -> Log.info("Using OpenAI " + openAiModelName)
+        );
         
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder();
         builder = builder.logRequests(logRequest).logResponses(logResponse);
-        builder = builder.apiKey(openaiKey.get());
+        if(openaiKey.isPresent()){
+            builder = builder.apiKey(openaiKey.get());
+        }else{
+            builder = builder.apiKey("demo");
+        }
+        if(openaiBaseUrl.isPresent()){
+            builder = builder.baseUrl(openaiBaseUrl.get());
+        }
+        
         builder = builder.modelName(openAiModelName);
+        
+        if(timeout.isPresent()){
+            builder = builder.timeout(timeout.get());
+        }
+        
         // TODO: Tune the other setting ?
         this.chatLanguageModel = builder.build();
         
     }
     
     private void loadOllamaModel(){
-        Log.info("Using Ollama (" + baseUrl + ") " + ollamaModelName);
+        Log.info("Using Ollama (" + ollamaBaseUrl + ") " + ollamaModelName);
         OllamaChatModel.OllamaChatModelBuilder builder = OllamaChatModel.builder();
         builder = builder.logRequests(logRequest).logResponses(logResponse);
-        builder = builder.baseUrl(baseUrl);
+        builder = builder.baseUrl(ollamaBaseUrl);
         builder = builder.modelName(ollamaModelName);
-        builder = builder.timeout(Duration.parse(timeout));
+        if(timeout.isPresent()){
+            builder = builder.timeout(timeout.get());
+        }
         // TODO: Tune the other setting ?
         this.chatLanguageModel = builder.build();
     }
@@ -103,7 +125,4 @@ public class ChappieService {
     public TestAssistant getTestAssistant(){
         return AiServices.create(TestAssistant.class, chatLanguageModel);
     }
-    
-
-    
 }
