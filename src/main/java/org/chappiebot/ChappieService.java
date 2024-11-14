@@ -1,9 +1,6 @@
 package org.chappiebot;
 
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.chat.request.ResponseFormat;
-import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
-import dev.langchain4j.model.chat.request.json.JsonSchema;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -19,11 +16,7 @@ import org.chappiebot.test.TestAssistant;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.Optional;
-
-import static dev.langchain4j.model.chat.request.ResponseFormatType.JSON;
-import static dev.langchain4j.model.chat.request.json.JsonStringSchema.JSON_STRING_SCHEMA;
 
 /**
  * The Chappie Server
@@ -46,7 +39,6 @@ public class ChappieService {
     Optional<Duration> timeout;
 
     // OpenAI
-
     @ConfigProperty(name = "chappie.openai.api-key")
     Optional<String> openaiKey;
 

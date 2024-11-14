@@ -4,11 +4,10 @@ import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 
-
 public interface ExplainAssistant {
 
     static final String SYSTEM_MESSAGE = """
-                You are an AI assistant helping to explain source code in {{programmingLanguage}} code from a {{product}} {{version}} application.
+                You are an AI assistant helping to explain source code in {{programmingLanguage}} {{programmingLanguageVersion}} code from a {{product}} {{productVersion}} application.
                 You will receive the code that needs to be explained.
 
                 Approach this task step-by-step, take your time and do not skip steps.
@@ -28,9 +27,10 @@ public interface ExplainAssistant {
                  
                 Please explain it to me.
             """)
-    public String explain(@V("programmingLanguage")String programmingLanguage, 
+    public ExplainOutput explain(@V("programmingLanguage")String programmingLanguage, 
+                            @V("programmingLanguageVersion")String programmingLanguageVersion,
                             @V("product")String product, 
-                            @V("version")String version, 
+                            @V("productVersion")String productVersion, 
                             @V("extraContext")String extraContext, 
                             @V("source")String source);
     

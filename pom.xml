@@ -5,6 +5,7 @@
     <artifactId>chappie-server</artifactId>
     <version>999-SNAPSHOT</version>
 
+    <name>Chappie Server</name>
     <description>
         The Chappie Server. AI for your project
     </description>
@@ -45,17 +46,16 @@
 
     <properties>
         <compiler-plugin.version>3.13.0</compiler-plugin.version>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.14.3</quarkus.platform.version>
+        <quarkus.platform.version>3.16.2</quarkus.platform.version>
         <skipITs>true</skipITs>
-        <surefire-plugin.version>3.2.5</surefire-plugin.version>
+        <surefire-plugin.version>3.3.1</surefire-plugin.version>
         
-        <langchain4j.version>0.34.0</langchain4j.version>
-        <json-rpc.version>0.0.5</json-rpc.version>
+        <langchain4j.version>0.35.0</langchain4j.version>
     </properties>
 
     <dependencyManagement>
@@ -76,9 +76,8 @@
             <artifactId>quarkus-arc</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkiverse.json-rpc</groupId>
-            <artifactId>quarkus-json-rpc</artifactId>
-            <version>${json-rpc.version}</version>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-jackson</artifactId>
         </dependency>
         <dependency>
             <groupId>dev.langchain4j</groupId>
@@ -95,7 +94,6 @@
             <artifactId>langchain4j-ollama</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
-        
         
         <dependency>
             <groupId>io.quarkus</groupId>

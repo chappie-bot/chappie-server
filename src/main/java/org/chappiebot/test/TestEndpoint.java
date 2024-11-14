@@ -1,23 +1,31 @@
 package org.chappiebot.test;
 
-import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 /**
- * The JsonRPC Endpoint for test creation
+ * The Endpoint for test creation
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("testing")
+@Path("/api/testing")
 public class TestEndpoint {
     
     @Inject TestAssistant testAssistant;
 
-    public SuggestedTest suggesttest(String programmingLanguage, 
-                                    String product, 
-                                    String version,
-                                    String extraContext,
-                                    String source) {
+    @POST
+    public Uni<TestOutput> suggesttest(TestInput testInput) {
         
-        return testAssistant.suggestTest(programmingLanguage, product, version, extraContext, source);
+        return Uni.createFrom().item(() -> testAssistant.suggestTest(
+                testInput.commonInput().programmingLanguage(), 
+                testInput.commonInput().programmingLanguageVersion(), 
+                testInput.commonInput().product(), 
+                testInput.commonInput().productVersion(), 
+                testInput.extraContext().orElse(""), 
+                testInput.source()))
+            .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());    
+                        
     }
 }

@@ -8,7 +8,7 @@ public interface ExceptionAssistant {
 
     static final String SYSTEM_MESSAGE = """
                 # IDENTITY
-                You are the worlds best AI coding assistant helping to debug {{programmingLanguage}} exceptions in a {{product}} {{version}} application.
+                You are the worlds best AI coding assistant helping to debug {{programmingLanguage}} {{programmingLanguageVersion}} exceptions in a {{product}} {{productVersion}} application.
                 
                 # STEPS
                 Consume the exception stacktrace.
@@ -73,9 +73,10 @@ public interface ExceptionAssistant {
                    'suggestedSource: 'String'
                 }                
             """)
-    public SuggestedFix suggestFix(@V("programmingLanguage")String programmingLanguage, 
+    public ExceptionOutput suggestFix(@V("programmingLanguage")String programmingLanguage, 
+                                    @V("programmingLanguageVersion")String programmingLanguageVersion,
                                     @V("product")String product, 
-                                    @V("version")String version, 
+                                    @V("productVersion")String productVersion, 
                                     @V("extraContext")String extraContext, 
                                     @V("stacktrace")String stacktrace, 
                                     @V("source")String source);
@@ -90,10 +91,20 @@ public interface ExceptionAssistant {
                 {{extraContext}}
                  
                 Please help me fix it.
+                 
+                You must answer strictly in the following JSON format:
+                                 
+                                 {
+                                    'response': 'String',
+                                    'explanation': 'String',
+                                    'diff': 'String',
+                                    'suggestedSource: 'String'
+                                 }
             """)
-    public SuggestedFix suggestFix(@V("programmingLanguage")String programmingLanguage, 
+    public ExceptionOutput suggestFix(@V("programmingLanguage")String programmingLanguage, 
+                                    @V("programmingLanguageVersion")String programmingLanguageVersion,
                                     @V("product")String product, 
-                                    @V("version")String version, 
+                                    @V("productVersion")String productVersion, 
                                     @V("extraContext")String extraContext, 
                                     @V("stacktrace")String stacktrace);
     
