@@ -1,23 +1,30 @@
 package org.chappiebot.explain;
 
-import dev.langchain4j.service.V;
-import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+
 /**
- * The JsonRPC Endpoint for explanation
+ * The Endpoint for explanation
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("explanation")
+@Path("/api/explanation")
 public class ExplainEndpoint {
     
     @Inject ExplainAssistant explainAssistant;
 
-    public String explain(@V("programmingLanguage")String programmingLanguage, 
-                            @V("product")String product, 
-                            @V("version")String version,
-                            @V("extraContext")String extraContext,
-                            @V("source")String source) {
+    @POST
+    public Uni<ExplainOutput> explain(ExplainInput explainInput) {
         
-        return explainAssistant.explain(programmingLanguage, product, version, extraContext, source);
+        return Uni.createFrom().item(() -> explainAssistant.explain(
+                explainInput.commonInput().programmingLanguage(), 
+                explainInput.commonInput().programmingLanguageVersion(), 
+                explainInput.commonInput().product(), 
+                explainInput.commonInput().productVersion(), 
+                explainInput.extraContext().orElse(""), 
+                explainInput.source()))
+            .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 }

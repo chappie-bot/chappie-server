@@ -5,5 +5,5 @@ package org.chappiebot.exception;
  *
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-public record SuggestedFix(String response, String explanation, String diff, String suggestedSource) {
+public record ExceptionOutput(String response, String explanation, String diff, String suggestedSource) {
 }

@@ -1,23 +1,31 @@
 package org.chappiebot.exception;
 
-import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+
 /**
- * The JsonRPC Endpoint for exceptions
+ * The Endpoint for exceptions
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("exception")
+@Path("/api/exception")
 public class ExceptionEndpoint {
     
     @Inject ExceptionAssistant exceptionAssistant;
 
-    public SuggestedFix suggestfix(String programmingLanguage, 
-                                    String product, 
-                                    String version,
-                                    String extraContext,
-                                    String stacktrace,
-                                    String source) {
+    @POST
+    public Uni<ExceptionOutput> suggestfix(ExceptionInput exceptionInput) {
         
-        return exceptionAssistant.suggestFix(programmingLanguage, product, version, extraContext, stacktrace, source);
+        return Uni.createFrom().item(() -> exceptionAssistant.suggestFix(
+                    exceptionInput.commonInput().programmingLanguage(), 
+                    exceptionInput.commonInput().programmingLanguageVersion(), 
+                    exceptionInput.commonInput().product(), 
+                    exceptionInput.commonInput().productVersion(), 
+                    exceptionInput.extraContext().orElse(""), 
+                    exceptionInput.stacktrace(), 
+                    exceptionInput.source()))
+                .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
 }

@@ -1,25 +1,30 @@
 package org.chappiebot.doc;
 
-import io.quarkiverse.jsonrpc.runtime.api.JsonRPCApi;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
 
 /**
- * The JsonRPC Endpoint for doc creation
+ * The Endpoint for doc creation
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-@JsonRPCApi("doc")
+@Path("/api/doc")
 public class DocEndpoint {
     
     @Inject
     DocAssistant docAssistant;
     
-    public String addDoc(String programmingLanguage, 
-                                    String product, 
-                                    String version,
-                                    String extraContext,
-                                    String doc,
-                                    String source) {
-        
-        return docAssistant.addDoc(programmingLanguage, product, version, extraContext, doc, source);
+    @POST
+    public Uni<DocOutput> addDoc(DocInput docInput) {
+        return Uni.createFrom().item(() -> docAssistant.addDoc(docInput.commonInput().programmingLanguage(),
+                docInput.commonInput().programmingLanguageVersion(), 
+                docInput.commonInput().product(), 
+                docInput.commonInput().productVersion(), 
+                docInput.extraContext().orElse(""), 
+                docInput.doc(), docInput.source()))
+            .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
     }
+    
 }

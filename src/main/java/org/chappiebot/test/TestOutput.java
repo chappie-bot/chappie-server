@@ -5,5 +5,5 @@ package org.chappiebot.test;
  *
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
-public record SuggestedTest(String explanation, String suggestedTestSource) {
+public record TestOutput(String explanation, String suggestedTestSource) {
 }

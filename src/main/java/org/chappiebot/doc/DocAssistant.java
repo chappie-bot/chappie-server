@@ -7,7 +7,7 @@ import dev.langchain4j.service.V;
 public interface DocAssistant {
 
     static final String SYSTEM_MESSAGE = """
-                You are an AI assistant helping to add or modify {{doc}} in {{programmingLanguage}} code from a {{product}} {{version}} application.
+                You are an AI assistant helping to add or modify {{doc}} in {{programmingLanguage}} {{programmingLanguageVersion}} code from a {{product}} {{productVersion}} application.
                 You will receive the code that needs the {{doc}}. Please use that as input when considering the response.
 
                 Approach this task step-by-step, take your time and do not skip steps.
@@ -30,9 +30,10 @@ public interface DocAssistant {
                  
                 Please add or modify the {{doc}} to reflect the code.
             """)
-    public String addDoc(@V("programmingLanguage")String programmingLanguage, 
+    public DocOutput addDoc(@V("programmingLanguage")String programmingLanguage, 
+                        @V("programmingLanguageVersion")String programmingLanguageVersion, 
                         @V("product")String product, 
-                        @V("version")String version, 
+                        @V("productVersion")String version, 
                         @V("extraContext")String extraContext, 
                         @V("doc")String doc, 
                         @V("source")String source);
