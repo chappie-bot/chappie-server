@@ -21,25 +21,26 @@ public interface ExceptionAssistant {
                 Output properly formatted JSON only with the following structure:
 
                 {
-                   'response': 'String',
-                   'explanation': 'String',
-                   'diff': 'String',
-                   'suggestedSource: 'String'
-                }
+                    'response': 'String',
+                    'explanation': 'String',
+                    'diff': 'String',
+                    'manipulatedContent: 'String'
+                 } 
                 
                 The response field contains your reply to what caused the exception.
                 
                 The explanation field contains details of the exception.
                     
-                The diff field contains the difference between the source and suggested fixed source code, to show the changes.
+                The diff field contains the difference between the source and suggested fixed source code, to show the changes and must be in propper diff file format.
                 
-                The suggestedSource field contains the source code including the fixed code in {{programmingLanguage}}. It must not contain any formatting errors.
+                The manipulatedContent field contains the source code including the fixed code in {{programmingLanguage}}. It must not contain any formatting errors. It must contain the full content as received, only changed to fix the issue.
                 
                 All 'String' fields must be correctly enclosed in single quotes.
                 
                 The response, explanation and diff fields should have a trailing comma.
                 
-                The suggestedSource field should only be terminated with in a single quote without a comma.
+                The manipulatedContent field should only be terminated with in a single quote without a comma.
+                                        
                 
                 The JSON must be properly parsed.
 
@@ -47,6 +48,8 @@ public interface ExceptionAssistant {
                 Output only properly formatted JSON as detailed above.
                 
                 Do not deviate from the required output structure.
+                                         
+                {{systemmessage}}
             """;
     
     @SystemMessage(SYSTEM_MESSAGE)
@@ -55,12 +58,10 @@ public interface ExceptionAssistant {
                 ```
                 {{stacktrace}}
                 ```
-                That comes from this code:
+                That comes from this content:
                 ```
-                {{source}}
+                {{content}}
                 ```
-                
-                {{extraContext}}
                  
                 Please help me fix it.
                 
@@ -70,16 +71,20 @@ public interface ExceptionAssistant {
                    'response': 'String',
                    'explanation': 'String',
                    'diff': 'String',
-                   'suggestedSource: 'String'
+                   'manipulatedContent: 'String'
                 }                
+                 
+                {{usermessage}} 
             """)
-    public ExceptionOutput suggestFix(@V("programmingLanguage")String programmingLanguage, 
+    public ExceptionOutput exception(@V("programmingLanguage")String programmingLanguage, 
                                     @V("programmingLanguageVersion")String programmingLanguageVersion,
                                     @V("product")String product, 
                                     @V("productVersion")String productVersion, 
-                                    @V("extraContext")String extraContext, 
                                     @V("stacktrace")String stacktrace, 
-                                    @V("source")String source);
+                                    @V("path")String path,
+                                    @V("content")String content,
+                                    @V("systemmessage")String systemmessage, 
+                                    @V("usermessage")String usermessage);
     
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage("""
@@ -87,25 +92,27 @@ public interface ExceptionAssistant {
                 ```
                 {{stacktrace}}
                 ```
-                
-                {{extraContext}}
-                 
+                                 
                 Please help me fix it.
                  
                 You must answer strictly in the following JSON format:
                                  
-                                 {
-                                    'response': 'String',
-                                    'explanation': 'String',
-                                    'diff': 'String',
-                                    'suggestedSource: 'String'
-                                 }
+                {
+                    'response': 'String',
+                    'explanation': 'String',
+                    'diff': 'String',
+                    'manipulatedContent: 'String'
+                 } 
+                 
+                 {{usermessage}} 
             """)
-    public ExceptionOutput suggestFix(@V("programmingLanguage")String programmingLanguage, 
+    public ExceptionOutput exception(@V("programmingLanguage")String programmingLanguage, 
                                     @V("programmingLanguageVersion")String programmingLanguageVersion,
                                     @V("product")String product, 
                                     @V("productVersion")String productVersion, 
                                     @V("extraContext")String extraContext, 
-                                    @V("stacktrace")String stacktrace);
+                                    @V("stacktrace")String stacktrace,
+                                    @V("systemmessage")String systemmessage, 
+                                    @V("usermessage")String usermessage);
     
 }

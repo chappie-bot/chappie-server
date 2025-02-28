@@ -1,10 +1,14 @@
 package org.chappiebot.exception;
 
-import org.chappiebot.CommonInput;
-import java.util.Optional;
+import java.nio.file.Path;
+import org.chappiebot.ContentIO;
+import org.chappiebot.GenericInput;
 
-public record ExceptionInput(CommonInput commonInput,
-                        Optional<String> extraContext,
+public record ExceptionInput(GenericInput genericInput,
                         String stacktrace,
-                        String source){
+                        Path path){
+
+    public String content() {
+        return ContentIO.toContent(path);
+    }
 }

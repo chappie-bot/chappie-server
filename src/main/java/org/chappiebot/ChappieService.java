@@ -9,14 +9,15 @@ import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
-import org.chappiebot.doc.DocAssistant;
 import org.chappiebot.exception.ExceptionAssistant;
-import org.chappiebot.explain.ExplainAssistant;
-import org.chappiebot.test.TestAssistant;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.Duration;
 import java.util.Optional;
+import org.chappiebot.workspace.dynamic.DynamicAssistant;
+import org.chappiebot.workspace.create.CreateAssistant;
+import org.chappiebot.workspace.update.UpdateAssistant;
+import org.chappiebot.workspace.read.ReadAssistant;
 
 /**
  * The Chappie Server
@@ -29,7 +30,7 @@ public class ChappieService {
 
     private ChatLanguageModel chatLanguageModel;
 
-    @ConfigProperty(name = "chappie.log.request", defaultValue = "false")
+    @ConfigProperty(name = "chappie.log.request", defaultValue = "true")
     boolean logRequest;
 
     @ConfigProperty(name = "chappie.log.response", defaultValue = "false")
@@ -111,22 +112,27 @@ public class ChappieService {
     }
 
     @Produces
-    public DocAssistant getDocAssistant() {
-        return AiServices.create(DocAssistant.class, chatLanguageModel);
+    public UpdateAssistant getManipulationAssistant() {
+        return AiServices.create(UpdateAssistant.class, chatLanguageModel);
     }
 
+    @Produces
+    public CreateAssistant getGenerationAssistant() {
+        return AiServices.create(CreateAssistant.class, chatLanguageModel);
+    }
+    
+    @Produces
+    public ReadAssistant getInterpretationAssistant() {
+        return AiServices.create(ReadAssistant.class, chatLanguageModel);
+    }
+    
     @Produces
     public ExceptionAssistant getExceptionAssistant() {
         return AiServices.create(ExceptionAssistant.class, chatLanguageModel);
     }
-
+    
     @Produces
-    public ExplainAssistant getExplainAssistant() {
-        return AiServices.create(ExplainAssistant.class, chatLanguageModel);
-    }
-
-    @Produces
-    public TestAssistant getTestAssistant() {
-        return AiServices.create(TestAssistant.class, chatLanguageModel);
+    public DynamicAssistant getDynamicAssistant() {
+        return AiServices.create(DynamicAssistant.class, chatLanguageModel);
     }
 }
