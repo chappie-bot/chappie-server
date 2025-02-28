@@ -1,7 +1,5 @@
 package org.chappiebot.exception;
 
-import io.smallrye.mutiny.Uni;
-import io.smallrye.mutiny.infrastructure.Infrastructure;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -16,16 +14,17 @@ public class ExceptionEndpoint {
     @Inject ExceptionAssistant exceptionAssistant;
 
     @POST
-    public Uni<ExceptionOutput> suggestfix(ExceptionInput exceptionInput) {
+    public ExceptionOutput exception(ExceptionInput exceptionInput) {
         
-        return Uni.createFrom().item(() -> exceptionAssistant.suggestFix(
-                    exceptionInput.commonInput().programmingLanguage(), 
-                    exceptionInput.commonInput().programmingLanguageVersion(), 
-                    exceptionInput.commonInput().product(), 
-                    exceptionInput.commonInput().productVersion(), 
-                    exceptionInput.extraContext().orElse(""), 
+        return exceptionAssistant.exception(
+                    exceptionInput.genericInput().programmingLanguage(), 
+                    exceptionInput.genericInput().programmingLanguageVersion(), 
+                    exceptionInput.genericInput().product(), 
+                    exceptionInput.genericInput().productVersion(), 
                     exceptionInput.stacktrace(), 
-                    exceptionInput.source()))
-                .runSubscriptionOn(Infrastructure.getDefaultWorkerPool());
+                    exceptionInput.path().toString(), 
+                    exceptionInput.content(),
+                    exceptionInput.genericInput().getSystemMessage(),
+                    exceptionInput.genericInput().getUserMessage());
     }
 }
