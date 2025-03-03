@@ -18,7 +18,7 @@ public class UpdateEndpoint {
     
     @POST
     public WorkspaceOutput workspaceUpdate(WorkspaceInput input) {
-        return  updateAssistant.update(input.genericInput().programmingLanguage(),
+        return updateAssistant.update(input.genericInput().programmingLanguage(),
                 input.genericInput().programmingLanguageVersion(), 
                 input.genericInput().product(), 
                 input.genericInput().productVersion(), 
