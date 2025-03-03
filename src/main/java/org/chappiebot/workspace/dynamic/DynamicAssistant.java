@@ -3,7 +3,6 @@ package org.chappiebot.workspace.dynamic;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
-import org.chappiebot.workspace.WorkspaceOutput;
 
 // TODO: Allow content here....
 public interface DynamicAssistant {

@@ -1,5 +1,7 @@
 package org.chappiebot.workspace.dynamic;
 
-public record DynamicOutput(String content) {
+import java.util.Map;
+
+public record DynamicOutput(Map<String,Object> json) {
     
 }
