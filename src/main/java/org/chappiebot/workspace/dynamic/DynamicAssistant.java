@@ -3,8 +3,8 @@ package org.chappiebot.workspace.dynamic;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
+import java.util.Map;
 
-// TODO: Allow content here....
 public interface DynamicAssistant {
 
     static final String SYSTEM_MESSAGE = """
@@ -19,7 +19,7 @@ public interface DynamicAssistant {
     
     @SystemMessage(SYSTEM_MESSAGE)
     @UserMessage(USER_MESSAGE)
-    public DynamicOutput dynamic(@V("programmingLanguage")String programmingLanguage, 
+    public Map<String,Object> assist(@V("programmingLanguage")String programmingLanguage, 
                         @V("programmingLanguageVersion")String programmingLanguageVersion, 
                         @V("product")String product, 
                         @V("productVersion")String version, 
