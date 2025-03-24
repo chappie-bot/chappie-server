@@ -9,7 +9,7 @@ public interface DynamicAssistant {
 
     static final String SYSTEM_MESSAGE = """
                 You are an AI assistant assisting in {{programmingLanguage}} {{programmingLanguageVersion}} code from a {{product}} {{productVersion}} application.
-                                         
+                You have to respond with a valid json object.
                 {{systemmessage}}
             """;
     
