@@ -14,10 +14,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.time.Duration;
 import java.util.Optional;
-import org.chappiebot.workspace.dynamic.DynamicAssistant;
-import org.chappiebot.workspace.create.CreateAssistant;
-import org.chappiebot.workspace.update.UpdateAssistant;
-import org.chappiebot.workspace.read.ReadAssistant;
+import org.chappiebot.assist.Assistant;
 
 /**
  * The Chappie Server
@@ -112,27 +109,12 @@ public class ChappieService {
     }
 
     @Produces
-    public UpdateAssistant getManipulationAssistant() {
-        return AiServices.create(UpdateAssistant.class, chatLanguageModel);
-    }
-
-    @Produces
-    public CreateAssistant getGenerationAssistant() {
-        return AiServices.create(CreateAssistant.class, chatLanguageModel);
-    }
-    
-    @Produces
-    public ReadAssistant getInterpretationAssistant() {
-        return AiServices.create(ReadAssistant.class, chatLanguageModel);
-    }
-    
-    @Produces
     public ExceptionAssistant getExceptionAssistant() {
         return AiServices.create(ExceptionAssistant.class, chatLanguageModel);
     }
     
     @Produces
-    public DynamicAssistant getDynamicAssistant() {
-        return AiServices.create(DynamicAssistant.class, chatLanguageModel);
+    public Assistant getAssistant() {
+        return AiServices.create(Assistant.class, chatLanguageModel);
     }
 }

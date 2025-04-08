@@ -1,11 +1,11 @@
-package org.chappiebot.workspace.dynamic;
+package org.chappiebot.assist;
 
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
 import java.util.Map;
 
-public interface DynamicAssistant {
+public interface Assistant {
 
     static final String SYSTEM_MESSAGE = """
                 You are an AI assistant assisting in {{programmingLanguage}} {{programmingLanguageVersion}} code from a {{product}} {{productVersion}} application.
