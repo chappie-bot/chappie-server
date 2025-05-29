@@ -19,8 +19,7 @@ public class Endpoint {
     public Map<String,Object> assist(AssistInput input) {
             return dynamicAssistant.assist(input.genericInput().programmingLanguage(),
                 input.genericInput().programmingLanguageVersion(),
-                input.genericInput().product(),
-                input.genericInput().productVersion(),
+                input.genericInput().quarkusVersion(),
                 input.genericInput().getSystemMessage(), 
                 input.genericInput().getUserMessage());
     }

@@ -8,7 +8,7 @@ public interface ExceptionAssistant {
 
     static final String SYSTEM_MESSAGE = """
                 # IDENTITY
-                You are the worlds best AI coding assistant helping to debug {{programmingLanguage}} {{programmingLanguageVersion}} exceptions in a {{product}} {{productVersion}} application.
+                You are the worlds best AI coding assistant helping to debug {{programmingLanguage}} {{programmingLanguageVersion}} exceptions in a Quarkus {{quarkusVersion}} application.
                 
                 # STEPS
                 Consume the exception stacktrace.
@@ -78,8 +78,7 @@ public interface ExceptionAssistant {
             """)
     public ExceptionOutput exception(@V("programmingLanguage")String programmingLanguage, 
                                     @V("programmingLanguageVersion")String programmingLanguageVersion,
-                                    @V("product")String product, 
-                                    @V("productVersion")String productVersion, 
+                                    @V("quarkusVersion")String quarkusVersion, 
                                     @V("stacktrace")String stacktrace, 
                                     @V("path")String path,
                                     @V("content")String content,
@@ -108,8 +107,7 @@ public interface ExceptionAssistant {
             """)
     public ExceptionOutput exception(@V("programmingLanguage")String programmingLanguage, 
                                     @V("programmingLanguageVersion")String programmingLanguageVersion,
-                                    @V("product")String product, 
-                                    @V("productVersion")String productVersion, 
+                                    @V("quarkusVersion")String quarkusVersion, 
                                     @V("extraContext")String extraContext, 
                                     @V("stacktrace")String stacktrace,
                                     @V("systemmessage")String systemmessage, 

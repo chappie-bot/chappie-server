@@ -1,6 +1,6 @@
 package org.chappiebot;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -25,12 +25,12 @@ import org.chappiebot.assist.Assistant;
 @Startup
 public class ChappieService {
 
-    private ChatLanguageModel chatLanguageModel;
+    private ChatModel chatModel;
 
     @ConfigProperty(name = "chappie.log.request", defaultValue = "true")
     boolean logRequest;
 
-    @ConfigProperty(name = "chappie.log.response", defaultValue = "false")
+    @ConfigProperty(name = "chappie.log.response", defaultValue = "true")
     boolean logResponse;
 
     @ConfigProperty(name = "chappie.timeout")
@@ -66,8 +66,8 @@ public class ChappieService {
     private void loadOpenAiModel() {
 
         openaiBaseUrl.ifPresentOrElse(
-                burl -> Log.info("Using OpenAI (" + burl + ") "),
-                () -> Log.info("Using OpenAI " + openAiModelName)
+                burl -> Log.info("\nChappie is using OpenAI (" + burl + ") \n ------------------------"),
+                () -> Log.info("\nChappie is using OpenAI " + openAiModelName + " \n ------------------------")
         );
 
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder();
@@ -92,11 +92,11 @@ public class ChappieService {
         builder.responseFormat("json_object");
 
         // TODO: Tune the other setting ?
-        this.chatLanguageModel = builder.build();
+        this.chatModel = builder.build();
     }
 
     private void loadOllamaModel() {
-        Log.info("Using Ollama (" + ollamaBaseUrl + ") " + ollamaModelName);
+        Log.info("\nChappie is using Ollama (" + ollamaBaseUrl + ") " + ollamaModelName + " \n ------------------------");
         OllamaChatModel.OllamaChatModelBuilder builder = OllamaChatModel.builder();
         builder = builder.logRequests(logRequest).logResponses(logResponse);
         builder = builder.baseUrl(ollamaBaseUrl);
@@ -105,16 +105,16 @@ public class ChappieService {
             builder = builder.timeout(timeout.get());
         }
         // TODO: Tune the other setting ?
-        this.chatLanguageModel = builder.build();
+        this.chatModel = builder.build();
     }
 
     @Produces
     public ExceptionAssistant getExceptionAssistant() {
-        return AiServices.create(ExceptionAssistant.class, chatLanguageModel);
+        return AiServices.create(ExceptionAssistant.class, chatModel);
     }
     
     @Produces
     public Assistant getAssistant() {
-        return AiServices.create(Assistant.class, chatLanguageModel);
+        return AiServices.create(Assistant.class, chatModel);
     }
 }
