@@ -4,8 +4,7 @@ import java.util.Map;
 
 public record GenericInput(String programmingLanguage,
                             String programmingLanguageVersion,
-                            String product, 
-                            String productVersion,
+                            String quarkusVersion,
                             String systemmessageTemplate, 
                             String usermessageTemplate,
                             Map<String,String> variables){

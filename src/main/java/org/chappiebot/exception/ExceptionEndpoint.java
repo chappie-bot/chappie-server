@@ -15,12 +15,10 @@ public class ExceptionEndpoint {
 
     @POST
     public ExceptionOutput exception(ExceptionInput exceptionInput) {
-        
         return exceptionAssistant.exception(
                     exceptionInput.genericInput().programmingLanguage(), 
                     exceptionInput.genericInput().programmingLanguageVersion(), 
-                    exceptionInput.genericInput().product(), 
-                    exceptionInput.genericInput().productVersion(), 
+                    exceptionInput.genericInput().quarkusVersion(), 
                     exceptionInput.stacktrace(), 
                     exceptionInput.path().toString(), 
                     exceptionInput.content(),
