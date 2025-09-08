@@ -1,6 +1,14 @@
 package org.chappiebot;
 
+import java.time.Duration;
+import java.util.Optional;
+
+import org.chappiebot.assist.Assistant;
+import org.chappiebot.exception.ExceptionAssistant;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -9,12 +17,6 @@ import io.quarkus.runtime.Startup;
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Singleton;
-import org.chappiebot.exception.ExceptionAssistant;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import java.time.Duration;
-import java.util.Optional;
-import org.chappiebot.assist.Assistant;
 
 /**
  * The Chappie Server
@@ -101,6 +103,8 @@ public class ChappieService {
         builder = builder.logRequests(logRequest).logResponses(logResponse);
         builder = builder.baseUrl(ollamaBaseUrl);
         builder = builder.modelName(ollamaModelName);
+        builder = builder.temperature(0.0); // as much of deterministic output as possible
+        builder = builder.responseFormat(ResponseFormat.JSON); // triggers formatting hints in supported models
         if (timeout.isPresent()) {
             builder = builder.timeout(timeout.get());
         }
