@@ -3,6 +3,7 @@ package org.chappiebot.exception;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import org.chappiebot.rag.RagRequestContext;
 
 /**
  * The Endpoint for exceptions
@@ -11,10 +12,16 @@ import jakarta.ws.rs.Path;
 @Path("/api/exception")
 public class ExceptionEndpoint {
     
-    @Inject ExceptionAssistant exceptionAssistant;
+    @Inject 
+    ExceptionAssistant exceptionAssistant;
 
+    @Inject 
+    RagRequestContext ragRequestContext;
+    
     @POST
     public ExceptionOutput exception(ExceptionInput exceptionInput) {
+        ragRequestContext.setVariables(exceptionInput.genericInput().variables());
+        
         return exceptionAssistant.exception(
                     exceptionInput.genericInput().programmingLanguage(), 
                     exceptionInput.genericInput().programmingLanguageVersion(), 
