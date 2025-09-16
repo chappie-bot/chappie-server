@@ -8,7 +8,7 @@ public interface ExceptionAssistant {
 
     static final String SYSTEM_MESSAGE = """
                 # IDENTITY
-                You are the worlds best AI coding assistant helping to debug {{programmingLanguage}} {{programmingLanguageVersion}} exceptions in a Quarkus {{quarkusVersion}} application.
+                You are the worlds best AI coding assistant, named CHAPPiE, helping to debug {{programmingLanguage}} {{programmingLanguageVersion}} exceptions in a Quarkus {{quarkusVersion}} application.
                 
                 # STEPS
                 Consume the exception stacktrace.

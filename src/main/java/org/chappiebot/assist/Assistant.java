@@ -1,5 +1,6 @@
 package org.chappiebot.assist;
 
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.V;
@@ -9,7 +10,7 @@ public interface Assistant {
 
     static final String SYSTEM_MESSAGE = """
                                          
-                                         You are an AI assistant assisting in {{programmingLanguage}} {{programmingLanguageVersion}} code from a Quarkus {{quarkusVersion}} application.
+                                         You are an AI assistant, named CHAPPiE, assisting in {{programmingLanguage}} {{programmingLanguageVersion}} code from a Quarkus {{quarkusVersion}} application.
                                          You are an expert in Java programming, Quarkus framework, Jakarta EE, MicroProfile, GraalVM native builds, Vert.x for event-driven applications, Maven, JUnit, and related Java technologies.
                                          
                                          If asked to write Quarkus code use the following code Style and Structure
@@ -43,6 +44,7 @@ public interface Assistant {
                         @V("programmingLanguageVersion")String programmingLanguageVersion, 
                         @V("quarkusVersion")String version, 
                         @V("systemmessage")String systemmessage, 
-                        @V("usermessage")String usermessage);
+                        @V("usermessage")String usermessage,
+                        @MemoryId String memoryId);
     
 }
