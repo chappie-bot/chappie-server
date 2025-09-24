@@ -1,5 +1,11 @@
 package org.chappiebot;
 
+import dev.langchain4j.mcp.McpToolProvider;
+import dev.langchain4j.mcp.client.DefaultMcpClient;
+import dev.langchain4j.mcp.client.McpClient;
+import dev.langchain4j.mcp.client.transport.McpTransport;
+import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
+import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -9,7 +15,10 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.request.ChatRequestParameters;
+import dev.langchain4j.model.chat.request.DefaultChatRequestParameters;
 import dev.langchain4j.model.chat.request.ResponseFormat;
+import dev.langchain4j.model.chat.request.ToolChoice;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
@@ -26,9 +35,9 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallenv15q.BgeSmallEnV15QuantizedEmbeddingModel;
 import dev.langchain4j.store.embedding.filter.comparison.ContainsString;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
-import dev.langchain4j.rag.query.Query;
-import dev.langchain4j.store.embedding.filter.Filter;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import jakarta.annotation.PreDestroy;
+import java.util.List;
 import java.util.Map;
 import org.chappiebot.rag.RagRequestContext;
 import org.chappiebot.store.StoreCreator;
@@ -88,6 +97,14 @@ public class ChappieService {
     @ConfigProperty(name = "chappie.store.messages.max", defaultValue = "30")
     int maxMessages;
     
+    
+    @ConfigProperty(name = "quarkus.application.version")
+    String appVersion;
+    
+    // MCP
+    @ConfigProperty(name = "chappie.mcp.servers")
+    Optional<List<String>> mcpServers;
+    
     @Inject
     StoreCreator storeCreator;
 
@@ -98,6 +115,13 @@ public class ChappieService {
     RagRequestContext ragRequestContext;
     
     private RetrievalAugmentor retrievalAugmentor;
+    private final List<McpClient> mcpClients = new java.util.concurrent.CopyOnWriteArrayList<>();
+    private McpToolProvider mcpToolProvider = null;
+    
+    private ChatRequestParameters chatRequestParameters = DefaultChatRequestParameters.builder()
+                .toolChoice(ToolChoice.AUTO)
+                .responseFormat(ResponseFormat.JSON)
+                .build();
     
     @PostConstruct
     public void init() {
@@ -107,8 +131,17 @@ public class ChappieService {
             loadOllamaModel();
         }
         enableRagIfPossible();
+        enableMcpIfConfigured();
     }
 
+    @PreDestroy
+    void shutdown() {
+        // Be nice and close transports/clients
+        for (McpClient c : mcpClients) {
+            try { c.close(); } catch (Exception ignored) {}
+        }
+    }
+    
     private void loadOpenAiModel() {
 
         openaiBaseUrl.ifPresentOrElse(
@@ -120,6 +153,8 @@ public class ChappieService {
         Log.info("CHAPPiE temperature set to " + temperature);
         if(openaiKey.isEmpty())Log.warn("CHAPPiE is using the default 'demo' api key");
         
+       
+        
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .logRequests(logRequest)
                 .logResponses(logResponse)
@@ -129,11 +164,16 @@ public class ChappieService {
                 .temperature(temperature)
                 .responseFormat("json_object");
         
+        if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
+            builder = builder
+                .defaultRequestParameters(chatRequestParameters)
+                .parallelToolCalls(false);
+        }
+        
         if (openaiBaseUrl.isPresent()) {
             builder = builder.baseUrl(openaiBaseUrl.get());
         }
 
-        // TODO: Tune the other setting ?
         this.chatModel = builder.build();
     }
 
@@ -151,18 +191,27 @@ public class ChappieService {
                 .temperature(temperature)
                 .responseFormat(ResponseFormat.JSON);
         
+        if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
+            builder = builder
+                .defaultRequestParameters(chatRequestParameters);
+        }
+                
         this.chatModel = builder.build();
     }
 
     @Produces
     public ExceptionAssistant getExceptionAssistant() {
+        
+        AiServices<ExceptionAssistant> assistantBuilder = AiServices.builder(ExceptionAssistant.class)
+                .chatModel(chatModel);
+        
         if (retrievalAugmentor != null) {
-            return AiServices.builder(ExceptionAssistant.class)
-                    .chatModel(chatModel)
-                    .retrievalAugmentor(retrievalAugmentor)
-                    .build();
+            assistantBuilder.retrievalAugmentor(retrievalAugmentor);
         }
-        return AiServices.create(ExceptionAssistant.class, chatModel);
+        if (mcpToolProvider != null) {
+            assistantBuilder.toolProvider(mcpToolProvider);
+        }
+        return assistantBuilder.build();
     }
     
     @Produces
@@ -174,6 +223,9 @@ public class ChappieService {
         
         if (retrievalAugmentor != null) {
             assistantBuilder.retrievalAugmentor(retrievalAugmentor);
+        }
+        if (mcpToolProvider != null) {
+            assistantBuilder.toolProvider(mcpToolProvider);
         }
         return assistantBuilder.build();
     }
@@ -221,6 +273,69 @@ public class ChappieService {
         Log.info("CHAPPiE RAG is enabled with " + ragMaxResults + " max results");
     }
     
+    private void enableMcpIfConfigured() {
+        if (mcpServers.isEmpty() || mcpServers.get().isEmpty()) {
+            Log.info("CHAPPiE MCP: no servers configured; continuing without MCP.");
+            return;
+        }
+        List<McpTransport> transports = new java.util.ArrayList<>();
+
+        for (String raw : mcpServers.get()) {
+            String s = raw.trim();
+            try {
+                if (s.startsWith("stdio:")) {
+                    String cmd = s.substring("stdio:".length()).trim();
+                    List<String> command = java.util.Arrays.asList(cmd.split("\\s+"));
+                    McpTransport t = new StdioMcpTransport.Builder()
+                            .command(command)
+                            .logEvents(false)
+                            .build();
+                    transports.add(t);
+                    Log.infof("CHAPPiE MCP: added stdio server: %s", command);
+                } else if (s.startsWith("http://") || s.startsWith("https://")) {
+                    McpTransport t = new StreamableHttpMcpTransport.Builder()
+                            .url(s)
+                            .logRequests(true)
+                            .logResponses(false)
+                            .build();
+                    transports.add(t);
+                    Log.infof("CHAPPiE MCP: added HTTP server: %s", s);
+                } else {
+                    Log.warnf("CHAPPiE MCP: unsupported server spec '%s' (use http(s)://… or stdio:…); skipping.", s);
+                }
+            } catch (Exception e) {
+                Log.warnf("CHAPPiE MCP: failed to add server '%s': %s", s, e.getMessage());
+            }
+        }
+
+        if (transports.isEmpty()) {
+            Log.warn("CHAPPiE MCP: no valid transports created; continuing without MCP.");
+            return;
+        }
+
+        List<McpClient> clients = new java.util.ArrayList<>();
+        int idx = 0;
+        for (McpTransport t : transports) {
+            McpClient client = new DefaultMcpClient.Builder()
+                    .key("chappie-mcp-" + (idx++))
+                    .clientName("CHAPPiE")
+                    .clientVersion(versionOr("dev"))
+                    .transport(t)
+                    .build();
+            clients.add(client);
+        }
+        mcpClients.addAll(clients);
+
+        this.mcpToolProvider = McpToolProvider.builder()
+                .mcpClients(clients)
+                //.resourcesAsToolsPresenter(McpResourcesAsToolsPresenter.basic())
+                .build();
+
+        Log.infof("CHAPPiE MCP: enabled with %d server(s).", clients.size());
+    }
+    
+    
+    
     private ChatMemoryProvider chatMemoryProvider() {
         Log.info("CHAPPiE Chat Memory is enabled with " + maxMessages + " max messages");
         return memoryId -> MessageWindowChatMemory.builder()
@@ -230,9 +345,11 @@ public class ChappieService {
             .build();
     }
     
-    private Filter buildExtensionOnlyFilter(Query q) {
-        Log.info(">>>>>>>>> text = " + q.text());
-        Log.info(">>>>>>>>> q.metadata() = " + q.metadata());
-        return null;
+    private String versionOr(String fallback) {
+        String v = appVersion;
+        if (v != null && !v.isBlank()) return v;
+
+        String impl = ChappieService.class.getPackage().getImplementationVersion();
+        return (impl != null && !impl.isBlank()) ? impl : fallback;
     }
 }
