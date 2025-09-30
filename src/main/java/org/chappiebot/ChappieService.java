@@ -6,11 +6,13 @@ import dev.langchain4j.mcp.client.McpClient;
 import dev.langchain4j.mcp.client.transport.McpTransport;
 import dev.langchain4j.mcp.client.transport.http.StreamableHttpMcpTransport;
 import dev.langchain4j.mcp.client.transport.stdio.StdioMcpTransport;
+
 import java.time.Duration;
 import java.util.Optional;
 
 import org.chappiebot.assist.Assistant;
 import org.chappiebot.exception.ExceptionAssistant;
+import org.chappiebot.rag.RetrievalProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -30,15 +32,13 @@ import jakarta.inject.Singleton;
 
 import jakarta.inject.Inject;
 import dev.langchain4j.rag.RetrievalAugmentor;
-import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.model.embedding.EmbeddingModel;
-import dev.langchain4j.model.embedding.onnx.bgesmallenv15q.BgeSmallEnV15QuantizedEmbeddingModel;
 import dev.langchain4j.store.embedding.filter.comparison.ContainsString;
-import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import jakarta.annotation.PreDestroy;
+
 import java.util.List;
 import java.util.Map;
+
 import org.chappiebot.rag.RagRequestContext;
 import org.chappiebot.store.StoreCreator;
 
@@ -64,7 +64,7 @@ public class ChappieService {
 
     @ConfigProperty(name = "chappie.temperature", defaultValue = "0.2")
     double temperature;
-    
+
     // OpenAI
 
     @ConfigProperty(name = "chappie.openai.api-key")
@@ -86,43 +86,40 @@ public class ChappieService {
 
     // RAG
 
-    @ConfigProperty(name = "chappie.rag.enabled", defaultValue = "true")
-    boolean ragEnabled;
-    
-    @ConfigProperty(name = "chappie.rag.results.max", defaultValue = "4")
-    int ragMaxResults;
-    
+    @Inject
+    RetrievalProvider retrievalProvider;
+
     // Store
-    
+
     @ConfigProperty(name = "chappie.store.messages.max", defaultValue = "30")
     int maxMessages;
-    
-    
+
+
     @ConfigProperty(name = "quarkus.application.version")
     String appVersion;
-    
+
     // MCP
     @ConfigProperty(name = "chappie.mcp.servers")
     Optional<List<String>> mcpServers;
-    
+
     @Inject
     StoreCreator storeCreator;
 
     @Inject
     ChatMemoryStore chatMemoryStore;
-    
-    @Inject 
+
+    @Inject
     RagRequestContext ragRequestContext;
-    
+
     private RetrievalAugmentor retrievalAugmentor;
     private final List<McpClient> mcpClients = new java.util.concurrent.CopyOnWriteArrayList<>();
     private McpToolProvider mcpToolProvider = null;
-    
+
     private ChatRequestParameters chatRequestParameters = DefaultChatRequestParameters.builder()
-                .toolChoice(ToolChoice.AUTO)
-                .responseFormat(ResponseFormat.JSON)
-                .build();
-    
+            .toolChoice(ToolChoice.AUTO)
+            .responseFormat(ResponseFormat.JSON)
+            .build();
+
     @PostConstruct
     public void init() {
         if (openaiKey.isPresent() || openaiBaseUrl.isPresent()) {
@@ -138,10 +135,13 @@ public class ChappieService {
     void shutdown() {
         // Be nice and close transports/clients
         for (McpClient c : mcpClients) {
-            try { c.close(); } catch (Exception ignored) {}
+            try {
+                c.close();
+            } catch (Exception ignored) {
+            }
         }
     }
-    
+
     private void loadOpenAiModel() {
 
         openaiBaseUrl.ifPresentOrElse(
@@ -151,10 +151,9 @@ public class ChappieService {
 
         Log.info("CHAPPiE timeout set to " + timeout);
         Log.info("CHAPPiE temperature set to " + temperature);
-        if(openaiKey.isEmpty())Log.warn("CHAPPiE is using the default 'demo' api key");
-        
-       
-        
+        if (openaiKey.isEmpty()) Log.warn("CHAPPiE is using the default 'demo' api key");
+
+
         OpenAiChatModel.OpenAiChatModelBuilder builder = OpenAiChatModel.builder()
                 .logRequests(logRequest)
                 .logResponses(logResponse)
@@ -163,13 +162,13 @@ public class ChappieService {
                 .timeout(timeout)
                 .temperature(temperature)
                 .responseFormat("json_object");
-        
+
         if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
             builder = builder
-                .defaultRequestParameters(chatRequestParameters)
-                .parallelToolCalls(false);
+                    .defaultRequestParameters(chatRequestParameters)
+                    .parallelToolCalls(false);
         }
-        
+
         if (openaiBaseUrl.isPresent()) {
             builder = builder.baseUrl(openaiBaseUrl.get());
         }
@@ -181,7 +180,7 @@ public class ChappieService {
         Log.info("CHAPPiE is using Ollama " + ollamaModelName + "(" + ollamaBaseUrl + ")");
         Log.info("CHAPPiE timeout set to " + timeout);
         Log.info("CHAPPiE temperature set to " + temperature);
-        
+
         OllamaChatModel.OllamaChatModelBuilder builder = OllamaChatModel.builder()
                 .logRequests(logRequest)
                 .logResponses(logResponse)
@@ -190,21 +189,21 @@ public class ChappieService {
                 .timeout(timeout)
                 .temperature(temperature)
                 .responseFormat(ResponseFormat.JSON);
-        
+
         if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
             builder = builder
-                .defaultRequestParameters(chatRequestParameters);
+                    .defaultRequestParameters(chatRequestParameters);
         }
-                
+
         this.chatModel = builder.build();
     }
 
     @Produces
     public ExceptionAssistant getExceptionAssistant() {
-        
+
         AiServices<ExceptionAssistant> assistantBuilder = AiServices.builder(ExceptionAssistant.class)
                 .chatModel(chatModel);
-        
+
         if (retrievalAugmentor != null) {
             assistantBuilder.retrievalAugmentor(retrievalAugmentor);
         }
@@ -213,14 +212,14 @@ public class ChappieService {
         }
         return assistantBuilder.build();
     }
-    
+
     @Produces
     public Assistant getAssistant() {
-        
+
         AiServices<Assistant> assistantBuilder = AiServices.builder(Assistant.class)
                 .chatModel(chatModel)
                 .chatMemoryProvider(chatMemoryProvider());
-        
+
         if (retrievalAugmentor != null) {
             assistantBuilder.retrievalAugmentor(retrievalAugmentor);
         }
@@ -235,44 +234,26 @@ public class ChappieService {
             Log.info("CHAPPiE RAG not available; continuing without RAG.");
             return;
         }
-        
+
         // TODO: This should use some local emmeding model
         if (openaiKey.isEmpty() && openaiBaseUrl.isEmpty()) {
             Log.warn("CHAPPiE RAG available but no OpenAI configuration for embeddings; continuing without RAG.");
             return;
         }
 
-        if(!ragEnabled) {
-            Log.warn("CHAPPiE RAG disabled by the user");
-            return;
-        }
-        
-        EmbeddingModel embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
-        
-        var retriever = EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(storeCreator.getStore().get())
-                .embeddingModel(embeddingModel)
-                .maxResults(ragMaxResults)
-                .dynamicFilter((t) -> {
-                    Map<String, String> variables = ragRequestContext.getVariables();
-                    if(variables!=null && !variables.isEmpty() && variables.containsKey("extension")){
-                        String extension = variables.get("extension");
-                        if(extension!=null && !extension.equalsIgnoreCase("any")){
-                            Log.info("Narrowing to [" + extension + "]");
-                            return new ContainsString("extensions_csv_padded", "," + extension + ",");
-                        }
-                    }
-                    return null;
-                })
-                .build();
-
-        this.retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-            .contentRetriever(retriever)
-            .build();
-        
-        Log.info("CHAPPiE RAG is enabled with " + ragMaxResults + " max results");
+        this.retrievalAugmentor = retrievalProvider.getRetrievalAugmentor((t) -> {
+            Map<String, String> variables = ragRequestContext.getVariables();
+            if (variables != null && !variables.isEmpty() && variables.containsKey("extension")) {
+                String extension = variables.get("extension");
+                if (extension != null && !extension.equalsIgnoreCase("any")) {
+                    Log.info("Narrowing to [" + extension + "]");
+                    return new ContainsString("extensions_csv_padded", "," + extension + ",");
+                }
+            }
+            return null;
+        });
     }
-    
+
     private void enableMcpIfConfigured() {
         if (mcpServers.isEmpty() || mcpServers.get().isEmpty()) {
             Log.info("CHAPPiE MCP: no servers configured; continuing without MCP.");
@@ -333,18 +314,17 @@ public class ChappieService {
 
         Log.infof("CHAPPiE MCP: enabled with %d server(s).", clients.size());
     }
-    
-    
-    
+
+
     private ChatMemoryProvider chatMemoryProvider() {
         Log.info("CHAPPiE Chat Memory is enabled with " + maxMessages + " max messages");
         return memoryId -> MessageWindowChatMemory.builder()
-            .id(memoryId)
-            .maxMessages(maxMessages)
-            .chatMemoryStore(chatMemoryStore)    
-            .build();
+                .id(memoryId)
+                .maxMessages(maxMessages)
+                .chatMemoryStore(chatMemoryStore)
+                .build();
     }
-    
+
     private String versionOr(String fallback) {
         String v = appVersion;
         if (v != null && !v.isBlank()) return v;
