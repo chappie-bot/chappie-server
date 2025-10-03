@@ -1,5 +1,8 @@
 package org.chappiebot;
 
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.ChatMessageType;
+import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -35,12 +38,15 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.bgesmallenv15q.BgeSmallEnV15QuantizedEmbeddingModel;
 import dev.langchain4j.store.embedding.filter.comparison.ContainsString;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
-import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import dev.langchain4j.rag.content.Content;
+import dev.langchain4j.rag.content.ContentMetadata;
+import dev.langchain4j.rag.content.injector.ContentInjector;
 import jakarta.annotation.PreDestroy;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.chappiebot.rag.RagRequestContext;
-import org.chappiebot.store.StoreCreator;
+import org.chappiebot.store.StoreManager;
 
 /**
  * The Chappie Server
@@ -92,6 +98,9 @@ public class ChappieService {
     @ConfigProperty(name = "chappie.rag.results.max", defaultValue = "4")
     int ragMaxResults;
     
+    @ConfigProperty(name = "chappie.rag.score.min", defaultValue = "0.82")
+    double ragMinScore;
+    
     // Store
     
     @ConfigProperty(name = "chappie.store.messages.max", defaultValue = "30")
@@ -106,11 +115,8 @@ public class ChappieService {
     Optional<List<String>> mcpServers;
     
     @Inject
-    StoreCreator storeCreator;
+    StoreManager storeManager;
 
-    @Inject
-    ChatMemoryStore chatMemoryStore;
-    
     @Inject 
     RagRequestContext ragRequestContext;
     
@@ -231,17 +237,11 @@ public class ChappieService {
     }
 
     private void enableRagIfPossible() {
-        if (storeCreator.getStore().isEmpty()) {
+        if (storeManager.getStore().isEmpty()) {
             Log.info("CHAPPiE RAG not available; continuing without RAG.");
             return;
         }
         
-        // TODO: This should use some local emmeding model
-        if (openaiKey.isEmpty() && openaiBaseUrl.isEmpty()) {
-            Log.warn("CHAPPiE RAG available but no OpenAI configuration for embeddings; continuing without RAG.");
-            return;
-        }
-
         if(!ragEnabled) {
             Log.warn("CHAPPiE RAG disabled by the user");
             return;
@@ -250,9 +250,10 @@ public class ChappieService {
         EmbeddingModel embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
         
         var retriever = EmbeddingStoreContentRetriever.builder()
-                .embeddingStore(storeCreator.getStore().get())
+                .embeddingStore(storeManager.getStore().get())
                 .embeddingModel(embeddingModel)
                 .maxResults(ragMaxResults)
+                .minScore(ragMinScore)
                 .dynamicFilter((t) -> {
                     Map<String, String> variables = ragRequestContext.getVariables();
                     if(variables!=null && !variables.isEmpty() && variables.containsKey("extension")){
@@ -266,11 +267,68 @@ public class ChappieService {
                 })
                 .build();
 
-        this.retrievalAugmentor = DefaultRetrievalAugmentor.builder()
-            .contentRetriever(retriever)
-            .build();
+        // TODO: Maybe skip RAG if the user message word count is less than 3 or something ?
         
-        Log.info("CHAPPiE RAG is enabled with " + ragMaxResults + " max results");
+        ContentInjector contentInjector = new ContentInjector(){
+            @Override
+            public ChatMessage inject(List<Content> contents, ChatMessage cm) {
+                if (contents == null || contents.isEmpty()) {
+                    return null;
+                }
+                
+                String userText = null;
+                if(cm.type().equals(ChatMessageType.USER)){
+                    UserMessage um = (UserMessage)cm;
+                    userText = um.singleText();
+                } else {
+                    // TODO: Handle other types ? I would have assumed this will always be USER ?
+                    //       Other types are : AI, CUSTOM, SYSTEM, TOOL_EXECUTION_RESULT 
+                }
+                
+                String contextBlock = contents.stream()
+                    .map(c -> {
+                        
+                        Object score = c.metadata().getOrDefault(ContentMetadata.SCORE, 0);
+                        // TODO: Can we surface the Score somehow ?
+                        String t = c.textSegment().text();
+                        if (t == null) return "";
+                        if (t.length() > 1400) t = t.substring(0, 1400) + " …"; // TODO: Make 1400 a input option
+                        return t;
+                    })
+                    .filter(s -> !s.isBlank())
+                    .limit(ragMaxResults)
+                    .collect(Collectors.joining("\n---\n"));
+
+                if (contextBlock.isBlank()) {
+                    return null;
+                }
+
+                String preface = """
+                    [RAG CONTEXT]
+                    Use this as a guide only. It may be incomplete or irrelevant.
+                    If it conflicts with known facts or user intent, explain and prefer correctness.
+                    If irrelevant, say so and answer without it.
+                    
+                    <context>
+                    %s
+                    </context>
+                    [/RAG CONTEXT]
+                    """.formatted(contextBlock);
+
+                String combined = (userText == null || userText.isBlank())
+                    ? preface
+                    : userText + "\n\n" + preface;
+                
+                return UserMessage.from(combined);
+            }
+        };
+
+        this.retrievalAugmentor = DefaultRetrievalAugmentor.builder()
+                .contentInjector(contentInjector)
+                .contentRetriever(retriever)
+                .build();
+        
+        Log.infof("CHAPPiE RAG is enabled with %d max results and min score %.2f", ragMaxResults, ragMinScore);
     }
     
     private void enableMcpIfConfigured() {
@@ -334,14 +392,13 @@ public class ChappieService {
         Log.infof("CHAPPiE MCP: enabled with %d server(s).", clients.size());
     }
     
-    
-    
     private ChatMemoryProvider chatMemoryProvider() {
         Log.info("CHAPPiE Chat Memory is enabled with " + maxMessages + " max messages");
+        
         return memoryId -> MessageWindowChatMemory.builder()
             .id(memoryId)
             .maxMessages(maxMessages)
-            .chatMemoryStore(chatMemoryStore)    
+            .chatMemoryStore(storeManager.getJdbcChatMemoryStore().orElse(null))
             .build();
     }
     
