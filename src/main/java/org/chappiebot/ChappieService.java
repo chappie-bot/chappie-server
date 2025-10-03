@@ -40,7 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.chappiebot.rag.RagRequestContext;
-import org.chappiebot.store.StoreCreator;
+import org.chappiebot.store.StoreManager;
 
 /**
  * The Chappie Server
@@ -103,10 +103,7 @@ public class ChappieService {
     Optional<List<String>> mcpServers;
 
     @Inject
-    StoreCreator storeCreator;
-
-    @Inject
-    ChatMemoryStore chatMemoryStore;
+    StoreManager storeManager;
 
     @Inject
     RagRequestContext ragRequestContext;
@@ -230,14 +227,8 @@ public class ChappieService {
     }
 
     private void enableRagIfPossible() {
-        if (storeCreator.getStore().isEmpty()) {
+        if (storeManager.getStore().isEmpty()) {
             Log.info("CHAPPiE RAG not available; continuing without RAG.");
-            return;
-        }
-
-        // TODO: This should use some local emmeding model
-        if (openaiKey.isEmpty() && openaiBaseUrl.isEmpty()) {
-            Log.warn("CHAPPiE RAG available but no OpenAI configuration for embeddings; continuing without RAG.");
             return;
         }
 
@@ -321,7 +312,7 @@ public class ChappieService {
         return memoryId -> MessageWindowChatMemory.builder()
                 .id(memoryId)
                 .maxMessages(maxMessages)
-                .chatMemoryStore(chatMemoryStore)
+                .chatMemoryStore(storeManager.getJdbcChatMemoryStore().orElse(null))
                 .build();
     }
 

@@ -1,14 +1,10 @@
 package org.chappiebot.store;
 
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
-import dev.langchain4j.store.memory.chat.ChatMemoryStore;
-import dev.langchain4j.store.memory.chat.InMemoryChatMemoryStore;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
-import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
-import jakarta.inject.Singleton;
 import java.util.Optional;
 import javax.sql.DataSource;
 
@@ -17,19 +13,21 @@ import javax.sql.DataSource;
  * @author Phillip Kruger (phillip.kruger@gmail.com)
  */
 @ApplicationScoped
-public class StoreCreator {
+public class StoreManager {
     
     @Inject Instance<DataSource> chappieDs;
 
     private static final String DOCUMENTS_TABLE = "rag_documents";
     private static final String MEMORY_TABLE = "chappie_chat_messages";
+    private static final String MEMORY_NAME_TABLE = "chappie_memory_names";
+    
     private static final int DIM = 1536;
     
-    private volatile Optional<PgVectorEmbeddingStore> cached;
+    private Optional<PgVectorEmbeddingStore> cached;
 
-    private volatile ChatMemoryStore chatMemoryStore;
+    private JdbcChatMemoryStore jdbcChatMemoryStore = null;
     
-    public java.util.Optional<PgVectorEmbeddingStore> getStore() {
+    public Optional<PgVectorEmbeddingStore> getStore() {
         if (this.cached != null) return this.cached;
         synchronized (this) {
             if (this.cached != null) return this.cached;
@@ -45,13 +43,21 @@ public class StoreCreator {
         }
     }
     
+    public Optional<JdbcChatMemoryStore> getJdbcChatMemoryStore(){
+        if(this.jdbcChatMemoryStore == null){
+            resolveDataSource();
+        }
+        if(this.jdbcChatMemoryStore == null){
+            return Optional.empty();
+        }
+        return Optional.of(this.jdbcChatMemoryStore);
+    } 
+    
     private DataSource resolveDataSource() {
         if (chappieDs != null && chappieDs.isResolvable()) {
             DataSource ds = chappieDs.get();
-            if(ensureChatTableExists(ds, MEMORY_TABLE)){
-                chatMemoryStore = new JdbcChatMemoryStore(ds, MEMORY_TABLE);
-            }else{
-                chatMemoryStore = new InMemoryChatMemoryStore();
+            if(ensureChatTableExists(ds, MEMORY_TABLE) && ensureNameTableExists(ds, MEMORY_NAME_TABLE)) {
+                jdbcChatMemoryStore = new JdbcChatMemoryStore(ds, MEMORY_TABLE, MEMORY_NAME_TABLE);
             }
             return ds;
         } else {
@@ -67,13 +73,14 @@ public class StoreCreator {
               msg_index    INTEGER      NOT NULL,
               created_at   TIMESTAMPTZ  NOT NULL DEFAULT now(),
               message_json JSONB        NOT NULL,
+              last_modified TIMESTAMPTZ  NOT NULL DEFAULT now(),
               PRIMARY KEY (memory_id, msg_index)
             )
             """.formatted(table);
 
         String idx = "CREATE INDEX IF NOT EXISTS idx_%s_mid ON %s(memory_id)"
                 .formatted(table, table);
-
+        
         try (var c = ds.getConnection(); var st = c.createStatement()) {
             st.execute(ddl);
             st.execute(idx);
@@ -84,10 +91,25 @@ public class StoreCreator {
         return true;
     }
 
-    
-    @Produces
-    @Singleton
-    ChatMemoryStore chatMemoryStore() {
-        return chatMemoryStore;
+    private boolean ensureNameTableExists(DataSource ds, String table) {
+        String ddl = """
+            CREATE TABLE IF NOT EXISTS %s (
+              memory_id    VARCHAR(200) PRIMARY KEY,
+              nice_name    VARCHAR(200) NOT NULL
+            )
+            """.formatted(table);
+
+        String uniqIdx = "CREATE UNIQUE INDEX IF NOT EXISTS ux_%s_nice_name_ci ON %s (LOWER(nice_name))"
+                .formatted(table, table);
+
+        try (var c = ds.getConnection(); var st = c.createStatement()) {
+            st.execute(ddl);
+            st.execute(uniqIdx);
+        } catch (Exception e) {
+            Log.warn("Could not create memory name table: " + e.getMessage());
+            return false;
+        }
+        return true;
     }
+    
 }
