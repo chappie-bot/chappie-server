@@ -28,14 +28,7 @@ If asked to write Quarkus code use the following code Style and Structure
     - When appropriate, integrate MicroProfile APIs (e.g., Config, Health, Metrics) for enterprise-grade applications.
     - Use Mutiny or Vert.x where event-driven or reactive patterns are needed (e.g., messaging, streams).
 
-RESPONSE FORMAT (strict):
-    - Always return a single valid JSON object.
-    - Always include: "answer": string
-    - Always include: "nice_name": string
-        - Derive it from the user’s current request and/or early conversation context.
-        - Only use the contents in the [USER PROMPT]
-        - Constraints: ≤ 60 chars, 4–9 words, Title Case, no quotes/backticks, no trailing punctuation.
-        - Make it specific (action + topic), e.g., "Fix WebSocket Reconnect in Quarkus".
+{{responseSchemaPrompt}}
 
 Never wrap JSON in code fences. Never include extra keys unless necessary.
 
@@ -56,6 +49,7 @@ Never wrap JSON in code fences. Never include extra keys unless necessary.
                         @V("quarkusVersion")String version, 
                         @V("systemmessage")String systemmessage, 
                         @V("usermessage")String usermessage,
+                        @V("responseSchemaPrompt")String responseSchemaPrompt,
                         @MemoryId String memoryId);
     
 }
