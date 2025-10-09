@@ -36,11 +36,15 @@ public class AssistantEndpoint {
         
             ragRequestContext.setVariables(input.genericInput().variables());
             
+            String responseSchema = input.responseSchemaPrompt();
+            if(responseSchema == null)responseSchema ="";
+            
             Map<String,Object> r = dynamicAssistant.assist(input.genericInput().programmingLanguage(),
                         input.genericInput().programmingLanguageVersion(),
                         input.genericInput().quarkusVersion(),
                         input.genericInput().getSystemMessage(), 
                         input.genericInput().getUserMessage(),
+                        responseSchema,
                         memoryId);
             
             if(r.containsKey(NICE_NAME)){
@@ -56,6 +60,6 @@ public class AssistantEndpoint {
                     .build();
     }
     
-    private static final String NICE_NAME = "nice_name";
+    private static final String NICE_NAME = "niceName";
     private static final String HEADER_MEMORY_ID = "X-Chappie-MemoryId";
 }
