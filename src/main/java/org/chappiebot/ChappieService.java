@@ -11,7 +11,6 @@ import java.time.Duration;
 import java.util.Optional;
 
 import org.chappiebot.assist.Assistant;
-import org.chappiebot.exception.ExceptionAssistant;
 import org.chappiebot.rag.RetrievalProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
@@ -33,7 +32,6 @@ import jakarta.inject.Singleton;
 import jakarta.inject.Inject;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.store.embedding.filter.comparison.ContainsString;
-import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import jakarta.annotation.PreDestroy;
 
 import java.util.List;
@@ -193,21 +191,6 @@ public class ChappieService {
         }
 
         this.chatModel = builder.build();
-    }
-
-    @Produces
-    public ExceptionAssistant getExceptionAssistant() {
-
-        AiServices<ExceptionAssistant> assistantBuilder = AiServices.builder(ExceptionAssistant.class)
-                .chatModel(chatModel);
-
-        if (retrievalAugmentor != null) {
-            assistantBuilder.retrievalAugmentor(retrievalAugmentor);
-        }
-        if (mcpToolProvider != null) {
-            assistantBuilder.toolProvider(mcpToolProvider);
-        }
-        return assistantBuilder.build();
     }
 
     @Produces
