@@ -121,17 +121,16 @@ public class RetrievalProvider {
             ContentInjector contentInjector = new ContentInjector(){
                 @Override
                 public ChatMessage inject(List<Content> contents, ChatMessage cm) {
-                    if (contents == null || contents.isEmpty()) {
-                        return null;
+                    if (cm == null) {
+                        return UserMessage.from("");
                     }
 
-                    String userText = null;
-                    if(cm.type().equals(ChatMessageType.USER)){
-                        UserMessage um = (UserMessage)cm;
-                        userText = um.singleText();
-                    } else {
-                        // TODO: Handle other types ? I would have assumed this will always be USER ?
-                        //       Other types are : AI, CUSTOM, SYSTEM, TOOL_EXECUTION_RESULT 
+                    if (cm.type() != ChatMessageType.USER) {
+                        return cm;
+                    }
+
+                    if (contents == null || contents.isEmpty()) {
+                        return cm;
                     }
 
                     String contextBlock = contents.stream()
@@ -149,7 +148,7 @@ public class RetrievalProvider {
                         .collect(Collectors.joining("\n---\n"));
 
                     if (contextBlock.isBlank()) {
-                        return null;
+                        return cm;
                     }
 
                     String preface = """
@@ -164,6 +163,7 @@ public class RetrievalProvider {
                         [/RAG CONTEXT]
                         """.formatted(contextBlock);
 
+                    String userText = ((UserMessage) cm).singleText();
                     String combined = (userText == null || userText.isBlank())
                         ? preface
                         : userText + "\n\n" + preface;
