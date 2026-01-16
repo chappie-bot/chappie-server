@@ -1,5 +1,6 @@
 package org.chappiebot;
 
+import com.ibm.watsonx.ai.CloudRegion;
 import dev.langchain4j.mcp.McpToolProvider;
 import dev.langchain4j.mcp.client.DefaultMcpClient;
 import dev.langchain4j.mcp.client.McpClient;
@@ -15,13 +16,16 @@ import org.chappiebot.rag.RetrievalProvider;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.anthropic.AnthropicChatModel;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.request.ChatRequestParameters;
 import dev.langchain4j.model.chat.request.DefaultChatRequestParameters;
 import dev.langchain4j.model.chat.request.ResponseFormat;
 import dev.langchain4j.model.chat.request.ToolChoice;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.watsonx.WatsonxChatModel;
 import dev.langchain4j.service.AiServices;
 import io.quarkus.logging.Log;
 import io.quarkus.runtime.Startup;
@@ -74,6 +78,36 @@ public class ChappieService {
     @ConfigProperty(name = "chappie.openai.model-name", defaultValue = "gpt-4o-mini")
     String openAiModelName;
 
+    // WatsonX
+    @ConfigProperty(name = "chappie.watsonx.api-key")
+    Optional<String> watsonxKey;
+
+    @ConfigProperty(name = "chappie.watsonx.base-url")
+    Optional<String> watsonxBaseUrl;
+
+    @ConfigProperty(name = "chappie.watsonx.cloud-region")
+    Optional<String> watsonxCloudRegion;
+    
+    @ConfigProperty(name = "chappie.watsonx.model-name", defaultValue = "ibm/granite-4-h-small")
+    String watsonxModelName;
+    
+    @ConfigProperty(name = "chappie.watsonx.project-id")
+    Optional<String> watsonxProjectId;
+    
+    // Anthropic
+    @ConfigProperty(name = "chappie.anthropic.api-key")
+    Optional<String> anthropicKey;
+
+    @ConfigProperty(name = "chappie.anthropic.model-name", defaultValue = "CLAUDE_3_5_SONNET_20240620")
+    String anthropicModelName;
+    
+    // Gemini
+    @ConfigProperty(name = "chappie.gemini.api-key")
+    Optional<String> geminiKey;
+
+    @ConfigProperty(name = "chappie.gemini.model-name", defaultValue = "gemini-2.5-flash")
+    String geminiModelName;
+    
     // Ollama
 
     @ConfigProperty(name = "chappie.ollama.base-url", defaultValue = "http://localhost:11434")
@@ -119,6 +153,12 @@ public class ChappieService {
     public void init() {
         if (openaiKey.isPresent() || openaiBaseUrl.isPresent()) {
             loadOpenAiModel();
+        } else if (anthropicKey.isPresent()){
+            loadAnthropicModel();
+        } else if (geminiKey.isPresent()){
+            loadGeminiModel();    
+        } else if (watsonxKey.isPresent() && (watsonxCloudRegion.isPresent() || watsonxBaseUrl.isPresent()) && watsonxProjectId.isPresent()){
+            loadWatsonXModel();
         } else {
             loadOllamaModel();
         }
@@ -171,6 +211,79 @@ public class ChappieService {
         this.chatModel = builder.build();
     }
 
+    private void loadGeminiModel(){
+        Log.info("CHAPPiE is using Gemini " + geminiModelName);
+        Log.info("CHAPPiE timeout set to " + timeout);
+        Log.info("CHAPPiE temperature set to " + temperature);
+        
+        GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder builder = GoogleAiGeminiChatModel.builder()
+                .logRequests(logRequest)
+                .logResponses(logResponse)
+                .apiKey(geminiKey.get())
+                .modelName(geminiModelName)
+                .timeout(timeout)
+                .temperature(temperature)
+                .responseFormat(ResponseFormat.JSON);
+
+        if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
+            builder = builder
+                    .defaultRequestParameters(chatRequestParameters);
+        }
+
+        this.chatModel = builder.build();
+    }
+    
+    private void loadAnthropicModel() {
+        Log.info("CHAPPiE is using Anthropic " + anthropicModelName);
+        Log.info("CHAPPiE timeout set to " + timeout);
+        Log.info("CHAPPiE temperature set to " + temperature);
+        
+        AnthropicChatModel.AnthropicChatModelBuilder builder = AnthropicChatModel.builder()
+                .logRequests(logRequest)
+                .logResponses(logResponse)
+                .apiKey(anthropicKey.get())
+                .modelName(anthropicModelName)
+                .timeout(timeout)
+                .temperature(temperature);
+        
+        if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
+            builder = builder
+                    .defaultRequestParameters(chatRequestParameters);
+        }
+
+        this.chatModel = builder.build();
+    }
+    
+    private void loadWatsonXModel() {
+        Log.info("CHAPPiE is using WatsonX " + watsonxModelName + "(" + watsonxBaseUrl.orElse("") + ")");
+        Log.info("CHAPPiE timeout set to " + timeout);
+        Log.info("CHAPPiE temperature set to " + temperature);
+        
+        WatsonxChatModel.Builder builder;
+        if(watsonxCloudRegion.isPresent()){
+            builder = WatsonxChatModel.builder()
+                .url(CloudRegion.valueOf(watsonxCloudRegion.get()));
+        }else{
+            builder = WatsonxChatModel.builder()
+                .url(watsonxBaseUrl.get());
+        }
+        
+        builder.logRequests(logRequest)
+                .logResponses(logResponse)
+                .url(watsonxBaseUrl.get())
+                .modelName(watsonxModelName)
+                .projectId(watsonxProjectId.get())
+                .timeLimit(timeout)
+                .temperature(temperature)
+                .responseFormat(ResponseFormat.JSON);
+        
+        if (!mcpServers.isEmpty() && !mcpServers.get().isEmpty()) {
+            builder = builder
+                    .defaultRequestParameters(chatRequestParameters);
+        }
+        this.chatModel = builder.build();
+    }
+    
     private void loadOllamaModel() {
         Log.info("CHAPPiE is using Ollama " + ollamaModelName + "(" + ollamaBaseUrl + ")");
         Log.info("CHAPPiE timeout set to " + timeout);
