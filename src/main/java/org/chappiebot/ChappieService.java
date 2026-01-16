@@ -110,7 +110,7 @@ public class ChappieService {
     private final List<McpClient> mcpClients = new java.util.concurrent.CopyOnWriteArrayList<>();
     private McpToolProvider mcpToolProvider = null;
 
-    private ChatRequestParameters chatRequestParameters = DefaultChatRequestParameters.builder()
+    private final ChatRequestParameters chatRequestParameters = DefaultChatRequestParameters.builder()
             .toolChoice(ToolChoice.AUTO)
             .responseFormat(ResponseFormat.JSON)
             .build();
