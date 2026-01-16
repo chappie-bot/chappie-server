@@ -18,29 +18,32 @@ public class GlobalExceptionMapper implements ExceptionMapper<Throwable> {
     public Response toResponse(Throwable exception) {
         
         int status = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
-        if(exception instanceof WebApplicationException){
-            status = ((WebApplicationException)exception).getResponse().getStatus();
+        if(exception instanceof WebApplicationException webApplicationException){
+            status = webApplicationException.getResponse().getStatus();
         }else if(exception instanceof ValidationException) {
             status = Response.Status.BAD_REQUEST.getStatusCode();
         }
         
         LOG.errorf(exception, "Unhandled exception (status=%s)", status);
+        
+        String headerValue = "";
+        if(exception!=null) {
+            String raw = exception.getMessage();
+            headerValue = sanitizeHeaderValue(raw);
 
-        String raw = exception.getMessage();
-        String headerValue = sanitizeHeaderValue(raw);
-
-        if (headerValue.isBlank()) {
-            headerValue = switch (status) {
-                case 400 -> "Bad request";
-                case 404 -> "Not found";
-                default -> "Internal server error";
-            };
+            if (headerValue.isBlank()) {
+                headerValue = switch (status) {
+                    case 400 -> "Bad request";
+                    case 404 -> "Not found";
+                    default -> "Internal server error";
+                };
+            }
         }
-
         return Response.status(status)
                 .header(ERROR_HEADER, headerValue)
                 .entity(Map.of("status", status, "message",headerValue))
                 .build();
+        
     }
 
     private static String sanitizeHeaderValue(String value) {
