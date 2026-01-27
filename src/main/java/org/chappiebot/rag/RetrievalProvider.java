@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class RetrievalProvider {
 
     @Inject
-    StoreManager storeCreator;
+    StoreManager storeManager;
 
     EmbeddingModel embeddingModel;
 
@@ -57,6 +57,10 @@ public class RetrievalProvider {
         if (ragEnabled) {
             loadEmbeddingModel();
             loadVectorStore();
+            if (embeddingStore == null) {
+                Log.warn("RAG enabled but no embedding store available; disabling RAG for this run");
+                ragEnabled = false;
+            }
         }
     }
 
@@ -65,7 +69,7 @@ public class RetrievalProvider {
     }
 
     private void loadVectorStore() {
-        embeddingStore = storeCreator.getStore().get();
+        this.embeddingStore = storeManager.getStore().orElse(null);
     }
 
     private void loadEmbeddingModel() {

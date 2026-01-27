@@ -262,18 +262,17 @@ public class ChappieService {
         WatsonxChatModel.Builder builder;
         if(watsonxCloudRegion.isPresent()){
             builder = WatsonxChatModel.builder()
-                .url(CloudRegion.valueOf(watsonxCloudRegion.get()));
+                .baseUrl(CloudRegion.valueOf(watsonxCloudRegion.get()));
         }else{
             builder = WatsonxChatModel.builder()
-                .url(watsonxBaseUrl.get());
+                .baseUrl(watsonxBaseUrl.get());
         }
         
         builder.logRequests(logRequest)
                 .logResponses(logResponse)
-                .url(watsonxBaseUrl.get())
                 .modelName(watsonxModelName)
                 .projectId(watsonxProjectId.get())
-                .timeLimit(timeout)
+                .timeout(timeout)
                 .temperature(temperature)
                 .responseFormat(ResponseFormat.JSON);
         
