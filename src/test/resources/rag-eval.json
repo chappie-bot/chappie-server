@@ -1,0 +1,327 @@
+[
+  {
+    "id": "devui-add-page",
+    "query": "How do I add a page to Quarkus Dev UI from an extension?",
+    "assertions": {
+      "anyRepoPathContains": ["dev-ui", "extension"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "rest-create-endpoint",
+    "query": "How do I create a REST endpoint in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["rest", "jax-rs"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "rest-json",
+    "query": "How do I return JSON from a REST endpoint in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["rest", "jackson", "json"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "panache-entity",
+    "query": "How do I define a Panache entity?",
+    "assertions": {
+      "anyRepoPathContains": ["panache"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "datasource-config",
+    "query": "How do I configure a PostgreSQL datasource in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["datasource", "postgresql", "hibernate"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "devservices-postgresql",
+    "query": "How does Quarkus Dev Services start PostgreSQL automatically?",
+    "assertions": {
+      "anyRepoPathContains": ["dev-services", "postgresql", "testing"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "kafka-producer",
+    "query": "How do I send messages to Kafka using Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["kafka", "reactive-messaging"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "kafka-consumer",
+    "query": "How do I consume messages from Kafka in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["kafka", "reactive-messaging"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "kafka-config",
+    "query": "How do I configure Kafka in application.properties for Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["kafka", "reactive-messaging", "configuration"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "security-oidc",
+    "query": "How do I secure a REST endpoint using OIDC in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["security", "oidc"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "config-properties",
+    "query": "How do I inject configuration values using @ConfigProperty?",
+    "assertions": {
+      "anyRepoPathContains": ["configuration", "config"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "scheduler",
+    "query": "How do I schedule a job using @Scheduled in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["scheduler", "scheduled"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "health-checks",
+    "query": "How do I expose health checks in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["health"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "metrics",
+    "query": "How do I expose metrics with Micrometer in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["metrics", "micrometer"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "native-build",
+    "query": "How do I build a native image with Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["native"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+
+
+  {
+    "id": "testing-rest",
+    "query": "How do I test REST endpoints in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["testing", "rest"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+    }
+  },
+
+  {
+    "id": "panache-testing",
+    "query": "How do I test Panache repositories in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["panache", "testing"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "panache-repository",
+    "query": "How do I write a repository using Panache?",
+    "assertions": {
+      "anyRepoPathContains": ["panache"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.83 }
+    }
+  },
+
+  {
+    "id": "grpc-service",
+    "query": "How do I create a gRPC service in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["grpc"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "opentelemetry-tracing",
+    "query": "How do I enable OpenTelemetry tracing in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["opentelemetry", "tracing", "telemetry"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "websocket",
+    "query": "How do I create a WebSocket endpoint in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["websocket"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "cdi-injection",
+    "query": "How do I inject beans using CDI in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["cdi", "injection", "dependency"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "cache-annotation",
+    "query": "How do I cache method results using @CacheResult in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["cache"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "flyway-migration",
+    "query": "How do I use Flyway for database migrations in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["flyway", "migration"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "liquibase-migration",
+    "query": "How do I use Liquibase for database migrations in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["liquibase"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "transaction-management",
+    "query": "How do I manage transactions with @Transactional in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["transaction", "narayana", "jta"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "async-rest",
+    "query": "How do I create asynchronous REST endpoints in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["async", "reactive", "rest"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "container-image",
+    "query": "How do I build a container image with Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["container", "docker", "image"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "kubernetes-deploy",
+    "query": "How do I deploy Quarkus to Kubernetes?",
+    "assertions": {
+      "anyRepoPathContains": ["kubernetes", "deploy"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "redis-cache",
+    "query": "How do I use Redis as a cache in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["redis", "cache"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "virtual-threads",
+    "query": "How do I use virtual threads in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["virtual-threads", "thread"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "jwt-security",
+    "query": "How do I secure endpoints with JWT in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["jwt", "security"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "multipart-upload",
+    "query": "How do I handle file uploads in Quarkus REST endpoints?",
+    "assertions": {
+      "anyRepoPathContains": ["multipart", "upload", "rest"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "command-mode",
+    "query": "How do I create a command line application with Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["command", "cli"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "logging-config",
+    "query": "How do I configure logging in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["logging", "log"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  },
+
+  {
+    "id": "hibernate-search",
+    "query": "How do I use Hibernate Search with Elasticsearch in Quarkus?",
+    "assertions": {
+      "anyRepoPathContains": ["hibernate-search", "elasticsearch", "search"],
+      "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
+    }
+  }
+]

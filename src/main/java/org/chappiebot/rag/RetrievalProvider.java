@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
 public class RetrievalProvider {
 
     @Inject
-    StoreManager storeCreator;
+    StoreManager storeManager;
 
     EmbeddingModel embeddingModel;
 
@@ -57,6 +57,10 @@ public class RetrievalProvider {
         if (ragEnabled) {
             loadEmbeddingModel();
             loadVectorStore();
+            if (embeddingStore == null) {
+                Log.warn("RAG enabled but no embedding store available; disabling RAG for this run");
+                ragEnabled = false;
+            }
         }
     }
 
@@ -65,7 +69,7 @@ public class RetrievalProvider {
     }
 
     private void loadVectorStore() {
-        embeddingStore = storeCreator.getStore().get();
+        this.embeddingStore = storeManager.getStore().orElse(null);
     }
 
     private void loadEmbeddingModel() {
@@ -78,11 +82,18 @@ public class RetrievalProvider {
     }
 
     public List<SearchMatch> search(String queryMessage, int maxResults, String restrictToExtension) {
+        return search(queryMessage, maxResults, restrictToExtension, true);
+    }
+
+    public List<SearchMatch> search(String queryMessage, int maxResults, String restrictToExtension, boolean useMetadataBoost) {
         Embedding embeddedQuery = embeddingModel.embed(queryMessage).content();
+
+        // Fetch more results if using metadata boost, so we can rerank
+        int fetchCount = useMetadataBoost ? Math.max(maxResults * 5, 50) : maxResults;
 
         EmbeddingSearchRequest.EmbeddingSearchRequestBuilder requestBuilder = EmbeddingSearchRequest.builder()
                 .queryEmbedding(embeddedQuery)
-                .maxResults(maxResults)
+                .maxResults(fetchCount)
                 .minScore(0.0);
         if (restrictToExtension != null) {
             Log.info("Restricting search to extension: " + restrictToExtension);
@@ -92,9 +103,137 @@ public class RetrievalProvider {
 
         EmbeddingSearchResult<TextSegment> searchResult = embeddingStore.search(searchRequest);
 
-        return searchResult.matches().stream()
+        List<SearchMatch> matches = searchResult.matches().stream()
                 .map(RetrievalProvider::extractContent)
                 .collect(Collectors.toList());
+
+        // Apply metadata boosting if enabled
+        if (useMetadataBoost) {
+            matches = applyMetadataBoost(matches, queryMessage);
+        }
+
+        // Return only requested number of results
+        return matches.stream().limit(maxResults).collect(Collectors.toList());
+    }
+
+    /**
+     * Boosts search results when document metadata (title, repo_path) matches query keywords.
+     * This implements hybrid search combining semantic similarity with keyword matching.
+     */
+    private List<SearchMatch> applyMetadataBoost(List<SearchMatch> matches, String query) {
+        // Extract potential keywords from query
+        String[] words = query.toLowerCase()
+                .replaceAll("[^a-z0-9\\s-]", " ")  // Remove punctuation except hyphens
+                .split("\\s+");
+
+        // Separate direct keywords from synonyms
+        List<String> directKeywords = new java.util.ArrayList<>();
+        List<String> synonymKeywords = new java.util.ArrayList<>();
+
+        for (String word : words) {
+            // Include words > 3 chars, or all-caps acronyms (CDI, JWT, etc.)
+            if ((word.length() > 3 || word.matches("[a-z]{2,3}")) && !isStopWord(word)) {
+                directKeywords.add(word);
+                // Add synonyms/related terms (but track them separately)
+                synonymKeywords.addAll(getSynonyms(word));
+            }
+        }
+
+        if (directKeywords.isEmpty() && synonymKeywords.isEmpty()) {
+            return matches;  // No keywords to boost on
+        }
+
+        Log.debugf("Metadata boost - direct keywords: %s, synonyms: %s", directKeywords, synonymKeywords);
+
+        // Boost scores for metadata matches
+        List<SearchMatch> boosted = new java.util.ArrayList<>();
+        for (SearchMatch match : matches) {
+            double originalScore = match.score();
+            double boostedScore = originalScore;
+
+            String title = String.valueOf(match.metadata().getOrDefault("title", "")).toLowerCase();
+            String repoPath = String.valueOf(match.metadata().getOrDefault("repo_path", "")).toLowerCase();
+            String docKeywords = String.valueOf(match.metadata().getOrDefault("keywords", "")).toLowerCase();
+            String docTopics = String.valueOf(match.metadata().getOrDefault("topics", "")).toLowerCase();
+
+            // Check for DIRECT keyword matches (higher boost)
+            for (String keyword : directKeywords) {
+                if (title.contains(keyword)) {
+                    boostedScore += 0.15;  // Significant boost for direct title match
+                    Log.debugf("Metadata boost: title '%s' matches keyword '%s' (+0.15)", title, keyword);
+                }
+                if (repoPath.contains(keyword)) {
+                    boostedScore += 0.10;  // Moderate boost for direct repo_path match
+                    Log.debugf("Metadata boost: repo_path '%s' matches keyword '%s' (+0.10)", repoPath, keyword);
+                }
+                if (docKeywords.contains(keyword)) {
+                    boostedScore += 0.20;  // Strong boost for keywords match (most specific!)
+                    Log.debugf("Metadata boost: keywords '%s' matches '%s' (+0.20)", docKeywords, keyword);
+                }
+                if (docTopics.contains(keyword)) {
+                    boostedScore += 0.25;  // STRONGEST boost for topics match (from AsciiDoc metadata!)
+                    Log.debugf("Metadata boost: topics '%s' matches '%s' (+0.25)", docTopics, keyword);
+                }
+            }
+
+            // Check for SYNONYM matches (moderate boost)
+            for (String synonym : synonymKeywords) {
+                if (title.contains(synonym)) {
+                    boostedScore += 0.12;  // Moderate boost for synonym title match
+                    Log.debugf("Metadata boost: title '%s' matches synonym '%s' (+0.12)", title, synonym);
+                }
+                if (repoPath.contains(synonym)) {
+                    boostedScore += 0.08;  // Moderate boost for synonym repo_path match
+                    Log.debugf("Metadata boost: repo_path '%s' matches synonym '%s' (+0.08)", repoPath, synonym);
+                }
+                if (docKeywords.contains(synonym)) {
+                    boostedScore += 0.15;  // Good boost for synonym in keywords
+                    Log.debugf("Metadata boost: keywords '%s' matches synonym '%s' (+0.15)", docKeywords, synonym);
+                }
+                if (docTopics.contains(synonym)) {
+                    boostedScore += 0.20;  // Strong boost for synonym in topics
+                    Log.debugf("Metadata boost: topics '%s' matches synonym '%s' (+0.20)", docTopics, synonym);
+                }
+            }
+
+            // Create new SearchMatch with boosted score
+            if (boostedScore > originalScore) {
+                boosted.add(new SearchMatch(match.text(), match.source(), boostedScore, match.metadata()));
+            } else {
+                boosted.add(match);
+            }
+        }
+
+        // Re-sort by boosted scores
+        boosted.sort((a, b) -> Double.compare(b.score(), a.score()));
+
+        return boosted;
+    }
+
+    private boolean isStopWord(String word) {
+        // Common English stop words that shouldn't be used for boosting
+        return List.of("this", "that", "with", "from", "have", "does", "what", "when",
+                      "where", "which", "their", "about", "would", "there", "these",
+                      "using", "quarkus", "guide").contains(word);
+    }
+
+    /**
+     * Returns synonyms and related terms for common technical keywords.
+     * Helps match queries like "startup" with documents about "lifecycle".
+     */
+    private List<String> getSynonyms(String word) {
+        return switch (word) {
+            case "startup", "start" -> List.of("lifecycle", "init", "initialization");
+            case "lifecycle" -> List.of("startup", "init");
+            // Note: Don't map "inject" to "cdi" as it causes false positives (config injection vs bean injection)
+            case "injection" -> List.of("cdi", "dependency");  // Only "injection", not "inject"
+            case "cdi" -> List.of("injection", "dependency");
+            case "validation", "validate" -> List.of("hibernate-validator", "validator");
+            case "validator", "hibernate-validator" -> List.of("validation", "validate");
+            case "mode" -> List.of("dev-mode", "continuous-testing");
+            case "cors" -> List.of("cross-origin");
+            default -> List.of();
+        };
     }
 
     private static SearchMatch extractContent(EmbeddingMatch<TextSegment> embeddingMatch) {

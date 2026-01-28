@@ -1,0 +1,18 @@
+[
+    {
+        "id": "dev-mode",
+        "query": "What is Quarkus Dev Mode and how does it work?",
+            "assertions": {
+            "anyRepoPathContains": ["dev-mode"],
+            "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+        }
+    },
+    {
+        "id": "panache-repository",
+        "query": "How do I write a repository using Panache?",
+        "assertions": {
+            "anyRepoPathContains": ["panache"],
+            "minScoreAtRankLe": { "rank": 10, "score": 0.85 }
+        }
+    }
+]

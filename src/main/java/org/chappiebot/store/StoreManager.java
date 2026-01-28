@@ -7,6 +7,7 @@ import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.Optional;
 import javax.sql.DataSource;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * This store are used for both RAG and memory
@@ -21,7 +22,8 @@ public class StoreManager {
     private static final String MEMORY_TABLE = "chappie_chat_messages";
     private static final String MEMORY_NAME_TABLE = "chappie_memory_names";
     
-    private static final int DIM = 1536;
+    @ConfigProperty(name = "chappie.rag.pgvector.dimension", defaultValue = "384")
+    int dim;
     
     private Optional<PgVectorEmbeddingStore> cached;
 
@@ -37,7 +39,7 @@ public class StoreManager {
                     : Optional.of(PgVectorEmbeddingStore.datasourceBuilder()
                         .datasource(ds)
                         .table(DOCUMENTS_TABLE)
-                        .dimension(DIM)
+                        .dimension(dim)
                         .build());
             return cached;
         }
