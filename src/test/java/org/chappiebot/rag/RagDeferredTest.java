@@ -18,38 +18,63 @@ import java.util.stream.IntStream;
 @QuarkusTestResource(
     value = RagImageDbResource.class,
     initArgs = {
-        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.17.7"),
+        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30"),
         @ResourceArg(name = "dim", value = "384")
     }
 )
-public class RagGoldenSetTest {
+public class RagDeferredTest {
 
     @Inject RetrievalProvider retrievalProvider;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Test
-    void golden_set_should_pass() throws Exception {
-        List<RagEvalCase> cases = loadCases("rag-eval.json");
-        Assertions.assertFalse(cases.isEmpty(), "rag-eval.json is empty");
+    void deferred_cases_with_docling() throws Exception {
+        List<RagEvalCase> cases = loadCases("rag-eval-deferred.json");
+        Assertions.assertFalse(cases.isEmpty(), "rag-eval-deferred.json is empty");
 
-        List<String> failures = new ArrayList<>();
+        System.out.println("\n========================================");
+        System.out.println("Testing " + cases.size() + " Previously Failing Cases with Docling");
+        System.out.println("========================================\n");
+
+        List<String> passed = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
 
         for (RagEvalCase c : cases) {
             try {
                 runCase(c);
+                passed.add(c.id);
+                System.out.println("✅ PASSED: " + c.id);
             } catch (AssertionError ae) {
-                failures.add("[" + c.id + "] " + ae.getMessage());
+                failed.add("[" + c.id + "] " + ae.getMessage());
+                System.out.println("❌ FAILED: " + c.id + " - " + ae.getMessage());
             } catch (Exception e) {
-                failures.add("[" + c.id + "] error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                failed.add("[" + c.id + "] error: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+                System.out.println("❌ ERROR: " + c.id + " - " + e.getMessage());
             }
         }
 
-        if (!failures.isEmpty()) {
-            String msg = "Golden set failures (" + failures.size() + "/" + cases.size() + "):\n"
-                    + String.join("\n", failures);
+        System.out.println("\n========================================");
+        System.out.println("RESULTS SUMMARY");
+        System.out.println("========================================");
+        System.out.println("Passed: " + passed.size() + "/" + cases.size());
+        System.out.println("Failed: " + failed.size() + "/" + cases.size());
+        
+        if (!passed.isEmpty()) {
+            System.out.println("\n✅ Passed tests:");
+            passed.forEach(id -> System.out.println("  - " + id));
+        }
+        
+        if (!failed.isEmpty()) {
+            System.out.println("\n❌ Failed tests:");
+            failed.forEach(System.out::println);
+            
+            String msg = "\nDeferred test failures (" + failed.size() + "/" + cases.size() + "):\n"
+                    + String.join("\n", failed);
             Assertions.fail(msg);
         }
+        
+        System.out.println("\n🎉 All " + cases.size() + " previously failing tests now PASS with Docling!");
     }
 
     private void runCase(RagEvalCase c) {
