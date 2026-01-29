@@ -9,7 +9,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Retention(RUNTIME)
 @Target(TYPE)
 public @interface RagImageDbConfig {
-    String image() default "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6";
+    String image() default "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1";
     int dim() default 384;
     String datasourceName() default ""; // "" = default datasource
 }
