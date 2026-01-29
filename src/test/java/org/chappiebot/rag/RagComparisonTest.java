@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @QuarkusTestResource(
     value = RagImageDbResource.class,
     initArgs = {
-        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6"),
+        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1"),
         @ResourceArg(name = "dim", value = "384")
     }
 )
@@ -65,7 +65,7 @@ public class RagComparisonTest {
         report.baselineTimestamp = baseline.timestamp;
         report.baselineImage = baseline.dockerImage;
         report.currentTimestamp = LocalDateTime.now().toString();
-        report.currentImage = System.getProperty("rag.image", "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6");
+        report.currentImage = System.getProperty("rag.image", "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1");
         report.comparisons = new ArrayList<>();
 
         Map<String, RagBaselineTest.BaselineResult> baselineMap = baseline.results.stream()

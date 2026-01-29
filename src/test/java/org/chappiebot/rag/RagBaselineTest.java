@@ -31,7 +31,7 @@ import java.util.*;
 @QuarkusTestResource(
     value = RagImageDbResource.class,
     initArgs = {
-        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6"),
+        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1"),
         @ResourceArg(name = "dim", value = "384")
     }
 )
@@ -47,7 +47,7 @@ public class RagBaselineTest {
 
         Baseline baseline = new Baseline();
         baseline.timestamp = LocalDateTime.now().toString();
-        baseline.dockerImage = System.getProperty("rag.image", "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6");
+        baseline.dockerImage = System.getProperty("rag.image", "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1");
         baseline.testCount = cases.size();
         baseline.results = new ArrayList<>();
 

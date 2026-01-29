@@ -14,7 +14,7 @@ import java.util.Locale;
 @QuarkusTestResource(
     value = RagImageDbResource.class,
     initArgs = {
-        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30-fixed"),
+        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1"),
         @ResourceArg(name = "dim", value = "384")
     }
 )

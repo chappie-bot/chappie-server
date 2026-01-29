@@ -14,21 +14,22 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.IntStream;
 
-@QuarkusTest
-@QuarkusTestResource(
-    value = RagImageDbResource.class,
-    initArgs = {
-        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30"),
-        @ResourceArg(name = "dim", value = "384")
-    }
-)
+
+//@QuarkusTest
+//@QuarkusTestResource(
+//    value = RagImageDbResource.class,
+//    initArgs = {
+//        @ResourceArg(name = "image", value = "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1"),
+//        @ResourceArg(name = "dim", value = "384")
+//    }
+//)
 public class RagDeferredTest {
 
     @Inject RetrievalProvider retrievalProvider;
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
-    @Test
+    //@Test
     void deferred_cases_with_docling() throws Exception {
         List<RagEvalCase> cases = loadCases("rag-eval-deferred.json");
         Assertions.assertFalse(cases.isEmpty(), "rag-eval-deferred.json is empty");

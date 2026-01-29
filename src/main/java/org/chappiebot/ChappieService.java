@@ -352,7 +352,7 @@ public class ChappieService {
             try {
                 if (s.startsWith("stdio:")) {
                     String cmd = s.substring("stdio:".length()).trim();
-                    List<String> command = java.util.Arrays.asList(cmd.split("\\s+"));
+                    List<String> command = parseCommandLine(cmd);
                     McpTransport t = new StdioMcpTransport.Builder()
                             .command(command)
                             .logEvents(false)
@@ -417,5 +417,91 @@ public class ChappieService {
 
         String impl = ChappieService.class.getPackage().getImplementationVersion();
         return (impl != null && !impl.isBlank()) ? impl : fallback;
+    }
+
+    /**
+     * Parses a command line string into a list of arguments, respecting quoted strings.
+     * Handles both single and double quotes, and supports escaping quotes with backslash.
+     * Works consistently across Windows, Linux, and macOS.
+     *
+     * Examples:
+     * - "node server.js" -> ["node", "server.js"]
+     * - "\"C:\\Program Files\\node\\node.exe\" server.js" -> ["C:\Program Files\node\node.exe", "server.js"]
+     * - "cmd 'arg with spaces' arg2" -> ["cmd", "arg with spaces", "arg2"]
+     *
+     * @param commandLine the command line string to parse
+     * @return a list of parsed arguments
+     */
+    private List<String> parseCommandLine(String commandLine) {
+        List<String> args = new java.util.ArrayList<>();
+        if (commandLine == null || commandLine.trim().isEmpty()) {
+            return args;
+        }
+
+        StringBuilder currentArg = new StringBuilder();
+        boolean inQuotes = false;
+        char quoteChar = 0;
+        boolean escaped = false;
+
+        for (int i = 0; i < commandLine.length(); i++) {
+            char c = commandLine.charAt(i);
+
+            if (escaped) {
+                // Previous character was a backslash, add current character literally
+                currentArg.append(c);
+                escaped = false;
+                continue;
+            }
+
+            if (c == '\\') {
+                // Only treat as escape if next char is a quote or backslash
+                // This preserves Windows paths like C:\Windows\System32
+                if (i + 1 < commandLine.length()) {
+                    char next = commandLine.charAt(i + 1);
+                    if (next == '"' || next == '\'' || next == '\\') {
+                        escaped = true;
+                        continue;
+                    }
+                }
+                // Otherwise, treat backslash as regular character (Windows paths)
+                currentArg.append(c);
+                continue;
+            }
+
+            if ((c == '"' || c == '\'')) {
+                if (!inQuotes) {
+                    // Start of quoted section
+                    inQuotes = true;
+                    quoteChar = c;
+                } else if (c == quoteChar) {
+                    // End of quoted section (matching quote)
+                    inQuotes = false;
+                    quoteChar = 0;
+                } else {
+                    // Different quote character while in quotes, treat as literal
+                    currentArg.append(c);
+                }
+                continue;
+            }
+
+            if (Character.isWhitespace(c) && !inQuotes) {
+                // Whitespace outside quotes marks end of argument
+                if (currentArg.length() > 0) {
+                    args.add(currentArg.toString());
+                    currentArg.setLength(0);
+                }
+                continue;
+            }
+
+            // Regular character, add to current argument
+            currentArg.append(c);
+        }
+
+        // Add final argument if any
+        if (currentArg.length() > 0) {
+            args.add(currentArg.toString());
+        }
+
+        return args;
     }
 }

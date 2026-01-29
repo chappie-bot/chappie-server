@@ -19,7 +19,7 @@ public class RagImageDbResource implements QuarkusTestResourceConfigurableLifecy
     @Override
     public Map<String, String> start() {
         String rawImage = System.getProperty("rag.image",
-                (cfg != null ? cfg.image() : "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.30.6"));
+                (cfg != null ? cfg.image() : "ghcr.io/quarkusio/chappie-ingestion-quarkus:3.31.1"));
 
         int dim = (cfg != null ? cfg.dim() : 384);
 
