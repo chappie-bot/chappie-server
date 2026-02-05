@@ -43,3 +43,4 @@ dev.sh
 /.quarkus/cli/plugins/
 # TLS Certificates
 .certs/
+/CLAUDE.md

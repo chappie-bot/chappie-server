@@ -55,7 +55,11 @@ public class RetrievalProvider {
     @PostConstruct
     public void init() {
         if (ragEnabled) {
-            loadEmbeddingModel();
+            if (!loadEmbeddingModel()) {
+                Log.warn("RAG enabled but embedding model failed to load; disabling RAG for this run");
+                ragEnabled = false;
+                return;
+            }
             loadVectorStore();
             if (embeddingStore == null) {
                 Log.warn("RAG enabled but no embedding store available; disabling RAG for this run");
@@ -72,8 +76,31 @@ public class RetrievalProvider {
         this.embeddingStore = storeManager.getStore().orElse(null);
     }
 
-    private void loadEmbeddingModel() {
-        embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
+    private boolean loadEmbeddingModel() {
+        try {
+            embeddingModel = new BgeSmallEnV15QuantizedEmbeddingModel();
+            return true;
+        } catch (UnsatisfiedLinkError e) {
+            String os = System.getProperty("os.name", "").toLowerCase();
+            if (os.contains("win")) {
+                Log.error("═══════════════════════════════════════════════════════════════════════════");
+                Log.error("Failed to load ONNX Runtime on Windows.");
+                Log.error("RAG (Retrieval-Augmented Generation) will be DISABLED.");
+                Log.error("");
+                Log.error("To enable RAG, install Microsoft Visual C++ Redistributable:");
+                Log.error("  → Download: https://aka.ms/vs/17/release/vc_redist.x64.exe");
+                Log.error("  → Install and restart the application");
+                Log.error("");
+                Log.error("CHAPPiE will continue running with AI assistance (without documentation lookup).");
+                Log.error("═══════════════════════════════════════════════════════════════════════════");
+            } else {
+                Log.error("Failed to load ONNX Runtime native libraries. RAG will be disabled.", e);
+            }
+            return false;
+        } catch (Exception e) {
+            Log.error("Unexpected error loading embedding model. RAG will be disabled.", e);
+            return false;
+        }
     }
 
     // TODO do we need to pad the extensions with commas to avoid partial matches?
