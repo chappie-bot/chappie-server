@@ -269,18 +269,24 @@ public class JdbcChatMemoryStore implements ChatMemoryStore {
 
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
+            try {
+                try (PreparedStatement pm = c.prepareStatement(delMsgs)) {
+                    pm.setString(1, memoryId);
+                    pm.executeUpdate();
+                }
 
-            try (PreparedStatement pm = c.prepareStatement(delMsgs)) {
-                pm.setString(1, memoryId);
-                pm.executeUpdate();
+                try (PreparedStatement pn = c.prepareStatement(delName)) {
+                    pn.setString(1, memoryId);
+                    pn.executeUpdate();
+                }
+
+                c.commit();
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
             }
-
-            try (PreparedStatement pn = c.prepareStatement(delName)) {
-                pn.setString(1, memoryId);
-                pn.executeUpdate();
-            }
-
-            c.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to delete conversation for " + memoryId, e);
         }
@@ -291,23 +297,30 @@ public class JdbcChatMemoryStore implements ChatMemoryStore {
         // We rewrite the full set; simpler and correct for windowed memory.
         String deleteSql = "DELETE FROM " + table + " WHERE memory_id = ?";
         String insertSql = "INSERT INTO " + table + " (memory_id, msg_index, message_json, last_modified) VALUES (?, ?, ?::jsonb, now())";
-        
+
         try (Connection c = ds.getConnection()) {
             c.setAutoCommit(false);
-            try (PreparedStatement del = c.prepareStatement(deleteSql)) {
-                del.setString(1, String.valueOf(memoryId));
-                del.executeUpdate();
-            }
-            try (PreparedStatement ins = c.prepareStatement(insertSql)) {
-                for (int i = 0; i < messages.size(); i++) {
-                    ins.setString(1, String.valueOf(memoryId));
-                    ins.setInt(2, i);
-                    ins.setString(3, ChatMessageSerializer.messageToJson(messages.get(i)));
-                    ins.addBatch();
+            try {
+                try (PreparedStatement del = c.prepareStatement(deleteSql)) {
+                    del.setString(1, String.valueOf(memoryId));
+                    del.executeUpdate();
                 }
-                ins.executeBatch();
+                try (PreparedStatement ins = c.prepareStatement(insertSql)) {
+                    for (int i = 0; i < messages.size(); i++) {
+                        ins.setString(1, String.valueOf(memoryId));
+                        ins.setInt(2, i);
+                        ins.setString(3, ChatMessageSerializer.messageToJson(messages.get(i)));
+                        ins.addBatch();
+                    }
+                    ins.executeBatch();
+                }
+                c.commit();
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            } finally {
+                c.setAutoCommit(true);
             }
-            c.commit();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update chat memory for " + memoryId, e);
         }

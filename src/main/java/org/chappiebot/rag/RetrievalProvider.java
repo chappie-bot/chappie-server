@@ -36,6 +36,20 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class RetrievalProvider {
 
+    private static final Map<String, List<String>> SYNONYMS = Map.ofEntries(
+        Map.entry("startup", List.of("lifecycle", "init", "initialization")),
+        Map.entry("start", List.of("lifecycle", "init", "initialization")),
+        Map.entry("lifecycle", List.of("startup", "init")),
+        Map.entry("injection", List.of("cdi", "dependency")),
+        Map.entry("cdi", List.of("injection", "dependency")),
+        Map.entry("validation", List.of("hibernate-validator", "validator")),
+        Map.entry("validate", List.of("hibernate-validator", "validator")),
+        Map.entry("validator", List.of("validation", "validate")),
+        Map.entry("hibernate-validator", List.of("validation", "validate")),
+        Map.entry("mode", List.of("dev-mode", "continuous-testing")),
+        Map.entry("cors", List.of("cross-origin"))
+    );
+
     @Inject
     StoreManager storeManager;
 
@@ -244,23 +258,8 @@ public class RetrievalProvider {
                       "using", "quarkus", "guide").contains(word);
     }
 
-    /**
-     * Returns synonyms and related terms for common technical keywords.
-     * Helps match queries like "startup" with documents about "lifecycle".
-     */
     private List<String> getSynonyms(String word) {
-        return switch (word) {
-            case "startup", "start" -> List.of("lifecycle", "init", "initialization");
-            case "lifecycle" -> List.of("startup", "init");
-            // Note: Don't map "inject" to "cdi" as it causes false positives (config injection vs bean injection)
-            case "injection" -> List.of("cdi", "dependency");  // Only "injection", not "inject"
-            case "cdi" -> List.of("injection", "dependency");
-            case "validation", "validate" -> List.of("hibernate-validator", "validator");
-            case "validator", "hibernate-validator" -> List.of("validation", "validate");
-            case "mode" -> List.of("dev-mode", "continuous-testing");
-            case "cors" -> List.of("cross-origin");
-            default -> List.of();
-        };
+        return SYNONYMS.getOrDefault(word, List.of());
     }
 
     private static SearchMatch extractContent(EmbeddingMatch<TextSegment> embeddingMatch) {
