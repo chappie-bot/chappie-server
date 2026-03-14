@@ -25,7 +25,7 @@ public class StoreManager {
     @ConfigProperty(name = "chappie.rag.pgvector.dimension", defaultValue = "384")
     int dim;
     
-    private Optional<PgVectorEmbeddingStore> cached;
+    private volatile Optional<PgVectorEmbeddingStore> cached;
 
     private JdbcChatMemoryStore jdbcChatMemoryStore = null;
     
@@ -47,13 +47,17 @@ public class StoreManager {
     
     public Optional<JdbcChatMemoryStore> getJdbcChatMemoryStore(){
         if(this.jdbcChatMemoryStore == null){
-            resolveDataSource();
+            synchronized (this) {
+                if(this.jdbcChatMemoryStore == null){
+                    resolveDataSource();
+                }
+            }
         }
         if(this.jdbcChatMemoryStore == null){
             return Optional.empty();
         }
         return Optional.of(this.jdbcChatMemoryStore);
-    } 
+    }
     
     private DataSource resolveDataSource() {
         if (chappieDs != null && chappieDs.isResolvable()) {
@@ -87,7 +91,7 @@ public class StoreManager {
             st.execute(ddl);
             st.execute(idx);
         } catch (Exception e) {
-            Log.warn("No datasource available - Will use InMemoryChatMemoryStore");
+            Log.warn("No datasource available - chat memory disabled");
             return false;
         }
         return true;

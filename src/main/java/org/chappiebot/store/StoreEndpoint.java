@@ -16,6 +16,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import io.quarkus.logging.Log;
 import java.util.List;
 import java.util.Map;
 
@@ -96,11 +97,13 @@ public class StoreEndpoint {
     @Path("/chats")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getChats(@QueryParam("filter") String filter,
-                            @QueryParam("limit") @DefaultValue("100")int limit, 
+                            @QueryParam("limit") @DefaultValue("100")int limit,
                             @QueryParam("offset") @DefaultValue("0") int offset) {
+        int cappedLimit = Math.min(Math.max(limit, 1), 1000);
+        int cappedOffset = Math.max(offset, 0);
         return storeManager.getJdbcChatMemoryStore()
             .map(store -> {
-                List<MemorySummary> listSummaries = store.listSummaries(filter, limit, offset);
+                List<MemorySummary> listSummaries = store.listSummaries(filter, cappedLimit, cappedOffset);
                 return Response.ok(listSummaries).build();
             })
             .orElseGet(() -> Response.noContent().build());
@@ -146,7 +149,8 @@ public class StoreEndpoint {
         try {
             String t = um.singleText();
             return t;
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            Log.debugf("Failed to extract singleText: %s", e.getMessage());
             return null;
         }
     }
@@ -154,10 +158,12 @@ public class StoreEndpoint {
     private static UserMessage userMessageFromText(String text) {
         try {
             return UserMessage.from(text);
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            Log.debugf("UserMessage.from(String) failed: %s", e.getMessage());
             try {
                 return UserMessage.userMessage(text);
-            } catch (Throwable ignore2) {
+            } catch (Throwable e2) {
+                Log.debugf("UserMessage.userMessage(String) failed: %s", e2.getMessage());
                 return UserMessage.from(List.of(new TextContent(text)));
             }
         }
@@ -166,7 +172,8 @@ public class StoreEndpoint {
     private static UserMessage userMessageFromContents(List<Content> contents) {
         try {
             return UserMessage.from(contents);
-        } catch (Throwable ignore) {
+        } catch (Throwable e) {
+            Log.debugf("UserMessage.from(List<Content>) failed: %s", e.getMessage());
             String joined = contents.stream()
                 .map(c -> c instanceof TextContent tc ? tc.text() : "")
                 .reduce("", (a, b) -> a.isEmpty() ? b : a + "\n" + b);
