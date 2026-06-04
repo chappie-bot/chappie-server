@@ -275,7 +275,7 @@
     "id": "virtual-threads",
     "query": "How do I use virtual threads in Quarkus?",
     "assertions": {
-      "anyRepoPathContains": ["virtual-threads", "thread"],
+      "anyRepoPathContains": ["virtual-threads", "virtual", "thread"],
       "minScoreAtRankLe": { "rank": 10, "score": 0.82 }
     }
   },

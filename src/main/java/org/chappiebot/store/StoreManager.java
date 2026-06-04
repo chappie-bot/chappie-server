@@ -55,11 +55,12 @@ public class StoreManager {
 
     /**
      * Re-checks for new RAG SQL fragments (e.g. after the user adds a Quarkiverse extension).
-     * Fast no-op when nothing new is found.
+     * Only runs when a project directory is configured, since its purpose is to discover
+     * new extension docs from the project's dependencies.
      */
     public void refreshRagData() {
-        if (resolvedDs != null) {
-            RagSqlLoader.ensureLoaded(resolvedDs, quarkusVersion.orElse(null), projectDir.orElse(null));
+        if (resolvedDs != null && projectDir.isPresent()) {
+            RagSqlLoader.ensureLoaded(resolvedDs, quarkusVersion.orElse(null), projectDir.get());
         }
     }
 
@@ -81,7 +82,9 @@ public class StoreManager {
         if (chappieDs != null && chappieDs.isResolvable()) {
             DataSource ds = chappieDs.get();
             resolvedDs = ds;
-            RagSqlLoader.ensureLoaded(ds, quarkusVersion.orElse(null), projectDir.orElse(null));
+            if (quarkusVersion.isPresent()) {
+                RagSqlLoader.ensureLoaded(ds, quarkusVersion.get(), projectDir.orElse(null));
+            }
             if(ensureChatTableExists(ds, MEMORY_TABLE) && ensureNameTableExists(ds, MEMORY_NAME_TABLE)) {
                 jdbcChatMemoryStore = new JdbcChatMemoryStore(ds, MEMORY_TABLE, MEMORY_NAME_TABLE);
             }
