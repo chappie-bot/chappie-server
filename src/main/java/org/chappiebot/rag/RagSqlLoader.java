@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -43,6 +44,7 @@ public class RagSqlLoader {
 
     private static final String RAG_SQL_PATH = "META-INF/quarkus-rag.sql";
     private static final String RAG_DATA_SQL_PATH = "META-INF/quarkus-rag-data.sql";
+    private static final String RAG_ARTIFACT_POINTER_PATH = "META-INF/quarkus-rag-artifact.properties";
     private static final String DEPLOYMENT_SUFFIX = "-deployment";
     private static final String CORE_GROUP_ID = "io.quarkus";
     private static final String AGGREGATED_ARTIFACT_ID = "quarkus-documentation-core-rag";
@@ -335,6 +337,28 @@ public class RagSqlLoader {
                     .resolve(dep.version)
                     .resolve(dep.artifactId + DEPLOYMENT_SUFFIX + "-" + dep.version + ".jar");
 
+            if (!Files.isRegularFile(deploymentJar)) {
+                continue;
+            }
+
+            // Check for a pointer to a separate RAG artifact
+            RagArtifactPointer pointer = readRagArtifactPointer(deploymentJar);
+            if (pointer != null) {
+                String ragGroupPath = pointer.groupId.replace('.', '/');
+                Path ragJarPath = m2Repo.resolve(ragGroupPath)
+                        .resolve(pointer.artifactId)
+                        .resolve(dep.version)
+                        .resolve(pointer.artifactId + "-" + dep.version + ".jar");
+
+                String sql = readSqlFromJar(ragJarPath);
+                if (sql != null) {
+                    String source = extractSource(sql, pointer.artifactId);
+                    fragments.add(new RagFragment(source, sql));
+                    continue;
+                }
+            }
+
+            // Fallback: read RAG SQL directly from the deployment JAR
             String sql = readSqlFromJar(deploymentJar);
             if (sql != null) {
                 String source = extractSource(sql, dep.artifactId);
@@ -348,6 +372,34 @@ public class RagSqlLoader {
     private static String extractSource(String sql, String fallback) {
         Matcher m = SOURCE_PATTERN.matcher(sql);
         return m.find() ? m.group(1) : fallback;
+    }
+
+    private record RagArtifactPointer(String groupId, String artifactId) {
+    }
+
+    private static RagArtifactPointer readRagArtifactPointer(Path jarPath) {
+        try (JarFile jar = new JarFile(jarPath.toFile())) {
+            JarEntry entry = jar.getJarEntry(RAG_ARTIFACT_POINTER_PATH);
+            if (entry == null) {
+                return null;
+            }
+            Properties props = new Properties();
+            try (InputStream is = jar.getInputStream(entry)) {
+                props.load(is);
+            }
+            String groupId = props.getProperty("groupId");
+            String artifactId = props.getProperty("artifactId");
+            if (groupId == null || artifactId == null) {
+                Log.warnf("Invalid RAG artifact pointer in %s: groupId=%s, artifactId=%s",
+                        jarPath, groupId, artifactId);
+                return null;
+            }
+            return new RagArtifactPointer(groupId.trim(), artifactId.trim());
+        } catch (IOException e) {
+            Log.debugf("Failed to read RAG artifact pointer from %s: %s",
+                    jarPath, e.getMessage());
+            return null;
+        }
     }
 
     private record Dependency(String groupId, String artifactId, String version) {
