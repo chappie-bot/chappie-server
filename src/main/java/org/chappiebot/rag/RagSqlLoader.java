@@ -353,7 +353,7 @@ public class RagSqlLoader {
                 String sql = readSqlFromJar(ragJarPath);
                 if (sql != null) {
                     String source = extractSource(sql, pointer.artifactId);
-                    fragments.add(new RagFragment(source, sql));
+                    fragments.add(new RagFragment(source, injectExtensionMetadata(sql, dep.artifactId)));
                     continue;
                 }
             }
@@ -362,7 +362,7 @@ public class RagSqlLoader {
             String sql = readSqlFromJar(deploymentJar);
             if (sql != null) {
                 String source = extractSource(sql, dep.artifactId);
-                fragments.add(new RagFragment(source, sql));
+                fragments.add(new RagFragment(source, injectExtensionMetadata(sql, dep.artifactId)));
             }
         }
 
@@ -372,6 +372,11 @@ public class RagSqlLoader {
     private static String extractSource(String sql, String fallback) {
         Matcher m = SOURCE_PATTERN.matcher(sql);
         return m.find() ? m.group(1) : fallback;
+    }
+
+    private static String injectExtensionMetadata(String sql, String extensionName) {
+        return sql.replace("'{\"source\":",
+                "'{\"extension\":\"" + extensionName + "\",\"source\":");
     }
 
     private record RagArtifactPointer(String groupId, String artifactId) {
