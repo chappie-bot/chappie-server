@@ -181,7 +181,7 @@ public class RagSqlLoader {
         String sql = readSqlFromJar(jarPath);
         if (sql != null) {
             Log.infof("Found RAG SQL artifact locally for Quarkus %s", version);
-            return sql;
+            return injectExtensionFromSource(sql);
         }
 
         if (version.endsWith("-SNAPSHOT")) {
@@ -194,7 +194,7 @@ public class RagSqlLoader {
             sql = readSqlFromJar(downloaded);
             if (sql != null) {
                 Log.infof("Downloaded RAG SQL artifact for Quarkus %s", version);
-                return sql;
+                return injectExtensionFromSource(sql);
             }
         }
 
@@ -377,6 +377,12 @@ public class RagSqlLoader {
     private static String injectExtensionMetadata(String sql, String extensionName) {
         return sql.replace("'{\"source\":",
                 "'{\"extension\":\"" + extensionName + "\",\"source\":");
+    }
+
+    private static String injectExtensionFromSource(String sql) {
+        return sql.replaceAll(
+                "'\\{\"source\":\"([^\"]+)\"",
+                "'{\"extension\":\"$1\",\"source\":\"$1\"");
     }
 
     private record RagArtifactPointer(String groupId, String artifactId) {
