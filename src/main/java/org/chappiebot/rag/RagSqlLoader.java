@@ -181,7 +181,7 @@ public class RagSqlLoader {
         String sql = readSqlFromJar(jarPath);
         if (sql != null) {
             Log.infof("Found RAG SQL artifact locally for Quarkus %s", version);
-            return sql;
+            return injectExtensionFromSource(sql);
         }
 
         if (version.endsWith("-SNAPSHOT")) {
@@ -194,7 +194,7 @@ public class RagSqlLoader {
             sql = readSqlFromJar(downloaded);
             if (sql != null) {
                 Log.infof("Downloaded RAG SQL artifact for Quarkus %s", version);
-                return sql;
+                return injectExtensionFromSource(sql);
             }
         }
 
@@ -353,7 +353,7 @@ public class RagSqlLoader {
                 String sql = readSqlFromJar(ragJarPath);
                 if (sql != null) {
                     String source = extractSource(sql, pointer.artifactId);
-                    fragments.add(new RagFragment(source, sql));
+                    fragments.add(new RagFragment(source, injectExtensionMetadata(sql, dep.artifactId)));
                     continue;
                 }
             }
@@ -362,7 +362,7 @@ public class RagSqlLoader {
             String sql = readSqlFromJar(deploymentJar);
             if (sql != null) {
                 String source = extractSource(sql, dep.artifactId);
-                fragments.add(new RagFragment(source, sql));
+                fragments.add(new RagFragment(source, injectExtensionMetadata(sql, dep.artifactId)));
             }
         }
 
@@ -372,6 +372,17 @@ public class RagSqlLoader {
     private static String extractSource(String sql, String fallback) {
         Matcher m = SOURCE_PATTERN.matcher(sql);
         return m.find() ? m.group(1) : fallback;
+    }
+
+    private static String injectExtensionMetadata(String sql, String extensionName) {
+        return sql.replace("'{\"source\":",
+                "'{\"extension\":\"" + extensionName + "\",\"source\":");
+    }
+
+    private static String injectExtensionFromSource(String sql) {
+        return sql.replaceAll(
+                "'\\{\"source\":\"([^\"]+)\"",
+                "'{\"extension\":\"$1\",\"source\":\"$1\"");
     }
 
     private record RagArtifactPointer(String groupId, String artifactId) {
